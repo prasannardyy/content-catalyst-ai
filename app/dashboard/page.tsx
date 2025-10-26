@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Plus, Video, Clock, CheckCircle, XCircle, ExternalLink, Zap, LogOut } from 'lucide-react'
 import toast from 'react-hot-toast'
 import axios from 'axios'
-import { supabase } from '@/lib/supabase'
+// Removed Supabase import - using demo mode only
 
 interface Project {
   id: string
@@ -43,19 +43,22 @@ export default function DashboardPage() {
 
   const fetchProjects = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/projects`,
+      // Demo mode - use mock projects
+      const mockProjects = [
         {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          id: 'demo_project_1',
+          original_video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          status: 'completed' as const,
+          title: 'Sample Video: Getting Started with AI',
+          description: 'A comprehensive guide to AI fundamentals',
+          duration: 300,
+          thumbnail_url: 'https://via.placeholder.com/320x180/3b82f6/ffffff?text=Demo+Video',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }
-      )
+      ]
       
-      setProjects(response.data)
+      setProjects(mockProjects)
     } catch (error) {
       console.error('Failed to fetch projects:', error)
       toast.error('Failed to load projects')
@@ -69,52 +72,39 @@ export default function DashboardPage() {
     setCreating(true)
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/projects`,
-        {
-          youtube_url: newVideoUrl
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
+      // Demo mode - simulate project creation
+      const newProject = {
+        id: `demo_project_${Date.now()}`,
+        original_video_url: newVideoUrl,
+        status: 'processing' as const,
+        title: 'Processing new video...',
+        description: 'AI is analyzing your content',
+        duration: undefined,
+        thumbnail_url: 'https://via.placeholder.com/320x180/6b7280/ffffff?text=Processing...',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
 
-      toast.success('Project created! AI processing has started.')
+      toast.success('Project created! (Demo Mode)')
       setShowNewProjectModal(false)
       setNewVideoUrl('')
       
       // Add new project to the list
-      setProjects([response.data, ...projects])
+      setProjects([newProject, ...projects])
       
-      // Refresh projects to get updated status
+      // Simulate processing completion after 3 seconds
       setTimeout(() => {
-        fetchProjects()
-      }, 2000)
+        setProjects(prev => prev.map(p => 
+          p.id === newProject.id 
+            ? { ...p, status: 'completed' as const, title: 'Demo Video: ' + newVideoUrl.split('v=')[1]?.substring(0, 10) || 'New Video' }
+            : p
+        ))
+        toast.success('Demo project processing completed!')
+      }, 3000)
       
     } catch (error: any) {
       console.error('Failed to create project:', error)
-      
-      // Handle different types of errors
-      let errorMessage = 'Failed to create project'
-      
-      if (error.response?.data?.detail) {
-        if (Array.isArray(error.response.data.detail)) {
-          // Handle validation errors
-          errorMessage = error.response.data.detail.map((err: any) => err.msg).join(', ')
-        } else if (typeof error.response.data.detail === 'string') {
-          errorMessage = error.response.data.detail
-        }
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-      
-      toast.error(errorMessage)
+      toast.error('Failed to create project')
     } finally {
       setCreating(false)
     }

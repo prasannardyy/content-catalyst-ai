@@ -7,15 +7,15 @@
 - **Styling**: Tailwind CSS utility-first framework
 - **UI Components**: Headless UI, Lucide React icons
 - **State Management**: React Context API
-- **Authentication**: Supabase Auth with SSR support
+- **Authentication**: Demo mode authentication (no external dependencies)
 - **HTTP Client**: Axios for API communication
 - **Notifications**: React Hot Toast
 - **Markdown**: React Markdown with syntax highlighting
 
 ## Backend Integration
 
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth with demo mode fallback
+- **Database**: Demo mode with mock data (no external database)
+- **Authentication**: Demo mode authentication only
 - **API**: RESTful API communication
 - **Demo Mode**: Built-in mock data system for development/testing
 
@@ -41,8 +41,7 @@ npm audit            # Check for security vulnerabilities
 
 ## Environment Configuration
 
-- **Demo Mode**: `NEXT_PUBLIC_DEMO_MODE=true` for development without external APIs
-- **Supabase**: URL and anon key for database/auth
+- **Demo Mode**: Always enabled (no external APIs required)
 - **API URL**: Backend service endpoint
 
 ## Deployment

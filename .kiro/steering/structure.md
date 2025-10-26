@@ -46,7 +46,7 @@ components/
 
 ```
 lib/
-├── supabase.ts           # Supabase client configuration
+├── api.ts               # API client configuration
 ├── auth-context.tsx     # Authentication context provider
 ├── demo-mode.ts         # Demo mode utilities and mock data
 └── api.ts               # API client functions

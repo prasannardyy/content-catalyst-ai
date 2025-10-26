@@ -1,9 +1,23 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session } from '@supabase/supabase-js'
-import { supabase } from './supabase'
 import { demoUser, demoSession } from './demo-mode'
+
+interface User {
+  id: string
+  email: string
+  user_metadata: {
+    full_name: string
+  }
+}
+
+interface Session {
+  access_token: string
+  refresh_token: string
+  expires_in: number
+  token_type: string
+  user: User
+}
 
 interface AuthContextType {
   user: User | null
@@ -33,48 +47,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    
-    if (isDemoMode) {
-      // In demo mode, use fake user data
-      setSession(demoSession as Session)
-      setUser(demoUser as User)
-      setLoading(false)
-      return
-    }
-
-    // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    }
-
-    getInitialSession()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session)
-        setUser(session?.user ?? null)
-        setLoading(false)
-      }
-    )
-
-    return () => subscription.unsubscribe()
+    // Always use demo mode since we removed Supabase
+    setSession(demoSession as Session)
+    setUser(demoUser as User)
+    setLoading(false)
   }, [])
 
   const signOut = async () => {
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    
-    if (isDemoMode) {
-      // In demo mode, just clear the state
-      setSession(null)
-      setUser(null)
-    } else {
-      await supabase.auth.signOut()
-    }
+    // In demo mode, just clear the state
+    setSession(null)
+    setUser(null)
   }
 
   const value = {

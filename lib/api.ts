@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { supabase } from './supabase'
+// Removed Supabase import - using demo mode only
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -11,22 +11,10 @@ const api = axios.create({
   },
 })
 
-// Add auth interceptor
+// Add auth interceptor (demo mode only)
 api.interceptors.request.use(async (config) => {
-  // Check if we're in demo mode
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-  
-  if (isDemoMode) {
-    // In demo mode, use a fake token
-    config.headers.Authorization = `Bearer demo_token_123`
-  } else {
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (session?.access_token) {
-      config.headers.Authorization = `Bearer ${session.access_token}`
-    }
-  }
-  
+  // Always use demo token since we removed Supabase
+  config.headers.Authorization = `Bearer demo_token_123`
   return config
 })
 
@@ -34,12 +22,8 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    
-    if (error.response?.status === 401 && !isDemoMode) {
-      // Redirect to login on unauthorized (only in non-demo mode)
-      window.location.href = '/auth/login'
-    }
+    // In demo mode, just log errors
+    console.error('API Error:', error)
     return Promise.reject(error)
   }
 )

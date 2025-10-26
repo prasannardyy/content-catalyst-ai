@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+// Removed Supabase import - using demo mode only
 import { Zap, Mail, Lock, Eye, EyeOff, User } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -43,45 +43,20 @@ export default function SignUpPage() {
       return
     }
 
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-          }
-        }
-      })
-
-      if (error) {
-        toast.error(error.message)
-      } else {
-        toast.success('Account created! Please check your email to verify your account.')
-        router.push('/auth/login')
-      }
-    } catch (error) {
-      toast.error('An unexpected error occurred')
-    } finally {
+    // Demo mode - simulate signup
+    setTimeout(() => {
+      toast.success('Account created! (Demo Mode)')
+      router.push('/auth/login')
       setLoading(false)
-    }
+    }, 1000)
   }
 
   const handleGoogleSignUp = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`
-        }
-      })
-
-      if (error) {
-        toast.error(error.message)
-      }
-    } catch (error) {
-      toast.error('Failed to sign up with Google')
-    }
+    // Demo mode - simulate Google signup
+    toast.success('Google signup simulated! (Demo Mode)')
+    setTimeout(() => {
+      router.push('/dashboard')
+    }, 1000)
   }
 
   return (
