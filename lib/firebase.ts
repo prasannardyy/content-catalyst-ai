@@ -21,16 +21,25 @@ let app: FirebaseApp | undefined
 let auth: Auth | null = null
 let db: Firestore | null = null
 
-if (typeof window !== 'undefined' && !isDemoMode && hasFirebaseConfig) {
-  // Only initialize on client side with valid config
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig)
-  } else {
-    app = getApps()[0]
+// Only initialize Firebase on client side and when not in demo mode
+if (typeof window !== 'undefined') {
+  try {
+    if (!isDemoMode && hasFirebaseConfig) {
+      if (!getApps().length) {
+        app = initializeApp(firebaseConfig)
+      } else {
+        app = getApps()[0]
+      }
+      
+      auth = getAuth(app)
+      db = getFirestore(app)
+    }
+  } catch (error) {
+    console.warn('Firebase initialization failed, falling back to demo mode:', error)
+    // Fallback to null values if Firebase fails
+    auth = null
+    db = null
   }
-  
-  auth = getAuth(app)
-  db = getFirestore(app)
 }
 
 export { auth, db }

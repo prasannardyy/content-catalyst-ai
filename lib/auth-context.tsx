@@ -54,48 +54,63 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
                               process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
     
-    if (isDemoMode || !hasFirebaseConfig || !auth) {
-      // Use demo mode
+    try {
+      if (isDemoMode || !hasFirebaseConfig || !auth) {
+        // Use demo mode
+        setSession(demoSession as Session)
+        setUser(demoUser as User)
+        setLoading(false)
+        return
+      }
+
+      // Listen for authentication state changes
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+        try {
+          if (firebaseUser) {
+            // Convert Firebase user to our User interface
+            const customUser: User = {
+              id: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              displayName: firebaseUser.displayName || undefined,
+              user_metadata: {
+                full_name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User'
+              }
+            }
+
+            // Get the ID token for API calls
+            const idToken = await firebaseUser.getIdToken()
+            
+            const customSession: Session = {
+              access_token: idToken,
+              refresh_token: '',
+              expires_in: 3600,
+              token_type: 'Bearer',
+              user: customUser
+            }
+
+            setUser(customUser)
+            setSession(customSession)
+          } else {
+            setUser(null)
+            setSession(null)
+          }
+        } catch (error) {
+          console.error('Error processing auth state change:', error)
+          // Fallback to demo mode on error
+          setSession(demoSession as Session)
+          setUser(demoUser as User)
+        }
+        setLoading(false)
+      })
+
+      return () => unsubscribe()
+    } catch (error) {
+      console.error('Error setting up auth listener:', error)
+      // Fallback to demo mode on any error
       setSession(demoSession as Session)
       setUser(demoUser as User)
       setLoading(false)
-      return
     }
-
-    // Listen for authentication state changes
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        // Convert Firebase user to our User interface
-        const customUser: User = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email || '',
-          displayName: firebaseUser.displayName || undefined,
-          user_metadata: {
-            full_name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User'
-          }
-        }
-
-        // Get the ID token for API calls
-        const idToken = await firebaseUser.getIdToken()
-        
-        const customSession: Session = {
-          access_token: idToken,
-          refresh_token: '',
-          expires_in: 3600,
-          token_type: 'Bearer',
-          user: customUser
-        }
-
-        setUser(customUser)
-        setSession(customSession)
-      } else {
-        setUser(null)
-        setSession(null)
-      }
-      setLoading(false)
-    })
-
-    return () => unsubscribe()
   }, [])
 
   const signOut = async () => {
