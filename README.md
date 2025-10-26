@@ -13,37 +13,48 @@ This is the frontend application for Content Catalyst AI. The backend API is dep
 
 ## 🚀 Getting Started
 
-### Quick Start (Demo Mode)
+### Automated Setup (Recommended)
 ```bash
-npm install
+# Run the setup script
+./setup-local.sh
+
+# Start the development server
 npm run dev
 ```
-Visit http://localhost:3001 to see the demo.
 
-### Production Setup (Real Firebase)
-
-1. **Set up Firebase** (see [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) for detailed instructions):
-   - Create Firebase project
-   - Enable Authentication (Email/Password + Google)
-   - Set up Firestore database
+### Manual Setup
+1. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
 
 2. **Configure Environment Variables**:
    Create a `.env.local` file:
    ```env
-   NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-   NEXT_PUBLIC_API_URL=your_backend_api_url
+   # Firebase Configuration (already configured)
+   NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDG4p5STGHfFi2M6Uedv2vEg6VWAQrcUNg
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=contentcatalyst-1d0ea.firebaseapp.com
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=contentcatalyst-1d0ea
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=contentcatalyst-1d0ea.firebasestorage.app
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=277461592109
+   NEXT_PUBLIC_FIREBASE_APP_ID=1:277461592109:web:817bb87043b76a22c230a4
+   
+   # API Configuration
+   NEXT_PUBLIC_API_URL=http://localhost:8000
    NEXT_PUBLIC_DEMO_MODE=false
    ```
 
-3. **Start the application**:
+3. **Enable Firebase Authentication**:
+   - Go to: https://console.firebase.google.com/project/contentcatalyst-1d0ea/authentication
+   - Click "Get started" → "Sign-in method"
+   - Enable "Email/Password" and "Google"
+
+4. **Start the application**:
    ```bash
    npm run dev
    ```
+
+5. **Visit**: http://localhost:3001
 
 ## 📦 Deployment
 
