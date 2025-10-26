@@ -254,7 +254,7 @@ const generateContentForVideo = async (youtubeUrl: string, projectId: string) =>
   }
 
   // Get video metadata and analysis
-  const videoData = await getVideoMetadata(videoId)
+  const videoData = await getVideoMetadata(videoId, youtubeUrl)
   
   // Create complete video analysis object
   const analysis: VideoAnalysis = {
@@ -465,7 +465,7 @@ const completeProjectWithRealContent = async (projectId: string, youtubeUrl: str
       const assets = await generateContentForVideo(youtubeUrl, projectId)
       
       // Get video metadata for title and description
-      const videoData = await getVideoMetadata(videoId)
+      const videoData = await getVideoMetadata(videoId, youtubeUrl)
       
       const completedProject: Project = {
         id: projectId,
