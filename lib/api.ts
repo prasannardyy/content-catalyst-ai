@@ -259,35 +259,46 @@ const mockProject: Project = {
 export const projectsApi = {
   // Get all projects for the current user
   getProjects: async (): Promise<Project[]> => {
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    // Always return mock projects for now since there's no backend API
+    // This prevents network errors when fetching projects
+    return [mockProject]
     
-    if (isDemoMode || !hasFirebaseConfig) {
-      // Return mock projects in demo mode
+    // TODO: Uncomment this when you have a backend API running
+    /*
+    try {
+      const response = await api.get('/projects')
+      return response.data
+    } catch (error) {
+      // Fallback to mock data if API is not available
+      console.warn('Backend API not available, using mock data')
       return [mockProject]
     }
-    
-    const response = await api.get('/projects')
-    return response.data
+    */
   },
 
   // Get a specific project with assets
   getProject: async (projectId: string): Promise<Project> => {
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    // Always return mock project for now since there's no backend API
+    // This prevents network errors when viewing project details
+    if (projectId === 'demo_project_1' || projectId.startsWith('demo_project_') || projectId.startsWith('project_')) {
+      return mockProject
+    }
+    throw new Error('Project not found')
     
-    if (isDemoMode || !hasFirebaseConfig) {
-      // Return mock project in demo mode
-      if (projectId === 'demo_project_1' || projectId.startsWith('demo_project_')) {
+    // TODO: Uncomment this when you have a backend API running
+    /*
+    try {
+      const response = await api.get(`/projects/${projectId}`)
+      return response.data
+    } catch (error) {
+      // Fallback to mock data if API is not available
+      console.warn('Backend API not available, using mock data')
+      if (projectId === 'demo_project_1' || projectId.startsWith('demo_project_') || projectId.startsWith('project_')) {
         return mockProject
       }
       throw new Error('Project not found')
     }
-    
-    const response = await api.get(`/projects/${projectId}`)
-    return response.data
+    */
   },
 
   // Create a new project
@@ -296,25 +307,33 @@ export const projectsApi = {
     const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
                               process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
     
-    if (isDemoMode || !hasFirebaseConfig) {
-      // Return mock project creation in demo mode
-      const newProject: Project = {
-        ...mockProject,
-        id: `demo_project_${Date.now()}`,
-        original_video_url: youtubeUrl,
-        title: 'Processing new video...',
-        status: 'processing',
-        assets: [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+    // Always use mock data for now since there's no backend API
+    // This prevents network errors when creating projects
+    const newProject: Project = {
+      ...mockProject,
+      id: `project_${Date.now()}`,
+      original_video_url: youtubeUrl,
+      title: 'Processing new video...',
+      status: 'processing',
+      assets: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    return newProject
+    
+    // TODO: Uncomment this when you have a backend API running
+    /*
+    try {
+      const response = await api.post('/projects', {
+        youtube_url: youtubeUrl
+      })
+      return response.data
+    } catch (error) {
+      // Fallback to mock data if API is not available
+      console.warn('Backend API not available, using mock data')
       return newProject
     }
-    
-    const response = await api.post('/projects', {
-      youtube_url: youtubeUrl
-    })
-    return response.data
+    */
   },
 }
 
