@@ -71,21 +71,21 @@ export default function DashboardPage() {
 
     try {
       const newProject = await projectsApi.createProject(newVideoUrl)
-      
+
       toast.success('Project created! AI processing has started.')
       setShowNewProjectModal(false)
       setNewVideoUrl('')
-      
+
       // Add new project to the list
       setProjects([newProject, ...projects])
-      
+
       // The project completion is now handled by the API client
       // It will automatically notify when processing is complete
     } catch (error: any) {
       console.error('Failed to create project:', error)
-      
+
       let errorMessage = 'Failed to create project'
-      
+
       if (error.response?.data?.detail) {
         if (Array.isArray(error.response.data.detail)) {
           errorMessage = error.response.data.detail.map((err: any) => err.msg).join(', ')
@@ -95,7 +95,7 @@ export default function DashboardPage() {
       } else if (error.message) {
         errorMessage = error.message
       }
-      
+
       toast.error(errorMessage)
     } finally {
       setCreating(false)
@@ -248,12 +248,11 @@ export default function DashboardPage() {
                   {/* Status */}
                   <div className="flex items-center space-x-2">
                     {getStatusIcon(project.status)}
-                    <span className={`text-sm font-medium ${
-                      project.status === 'completed' ? 'text-green-600' :
+                    <span className={`text-sm font-medium ${project.status === 'completed' ? 'text-green-600' :
                       project.status === 'processing' ? 'text-blue-600' :
-                      project.status === 'failed' ? 'text-red-600' :
-                      'text-yellow-600'
-                    }`}>
+                        project.status === 'failed' ? 'text-red-600' :
+                          'text-yellow-600'
+                      }`}>
                       {getStatusText(project.status)}
                     </span>
                   </div>

@@ -374,6 +374,11 @@ const mockProject: Project = {
 
 // Helper function to store projects in localStorage
 const storeProject = (project: Project) => {
+  // Check if we're in the browser (localStorage is only available client-side)
+  if (typeof window === 'undefined') {
+    return
+  }
+  
   const storedProjects = JSON.parse(localStorage.getItem('user_projects') || '[]')
   const existingIndex = storedProjects.findIndex((p: Project) => p.id === project.id)
   
@@ -412,14 +417,21 @@ const completeProject = (projectId: string, youtubeUrl: string) => {
     
     storeProject(completedProject)
     
-    // Trigger a custom event to notify the UI
-    window.dispatchEvent(new CustomEvent('projectCompleted', { detail: { projectId } }))
+    // Trigger a custom event to notify the UI (only in browser)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('projectCompleted', { detail: { projectId } }))
+    }
   }, 3000) // Complete after 3 seconds
 }
 
 export const projectsApi = {
   // Get all projects for the current user
   getProjects: async (): Promise<Project[]> => {
+    // Check if we're in the browser (localStorage is only available client-side)
+    if (typeof window === 'undefined') {
+      return [mockProject]
+    }
+    
     // Get user-created projects from localStorage
     const storedProjects = JSON.parse(localStorage.getItem('user_projects') || '[]')
     
@@ -447,6 +459,11 @@ export const projectsApi = {
     // Check if this is the default demo project
     if (projectId === 'demo_project_1') {
       return mockProject
+    }
+    
+    // Check if we're in the browser (localStorage is only available client-side)
+    if (typeof window === 'undefined') {
+      throw new Error('Project not found')
     }
     
     // For user-created projects, check if we have stored data
