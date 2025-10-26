@@ -39,6 +39,18 @@ export default function DashboardPage() {
     if (user) {
       fetchProjects()
     }
+
+    // Listen for project completion events
+    const handleProjectCompleted = (event: CustomEvent) => {
+      toast.success('Project processing completed! Click "View Results" to see your generated content.')
+      fetchProjects() // Refresh the projects list
+    }
+
+    window.addEventListener('projectCompleted', handleProjectCompleted as EventListener)
+
+    return () => {
+      window.removeEventListener('projectCompleted', handleProjectCompleted as EventListener)
+    }
   }, [user, authLoading, router])
 
   const fetchProjects = async () => {
@@ -67,33 +79,8 @@ export default function DashboardPage() {
       // Add new project to the list
       setProjects([newProject, ...projects])
       
-      // In demo mode, simulate processing completion after 3 seconds
-      const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-      const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                                process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-      
-      if (isDemoMode || !hasFirebaseConfig || !auth) {
-        setTimeout(() => {
-          setProjects(prev => prev.map(p => 
-            p.id === newProject.id 
-              ? { 
-                  ...p, 
-                  status: 'completed' as const, 
-                  title: 'The Future of AI: Transforming Industries and Daily Life',
-                  description: 'A comprehensive exploration of how artificial intelligence is reshaping our world',
-                  duration: 847,
-                  thumbnail_url: 'https://via.placeholder.com/320x180/3b82f6/ffffff?text=AI+Future+Video'
-                }
-              : p
-          ))
-          toast.success('Demo project processing completed! Click "View Results" to see generated content.')
-        }, 3000)
-      } else {
-        // In real mode, refresh projects to get updated status
-        setTimeout(() => {
-          fetchProjects()
-        }, 2000)
-      }
+      // The project completion is now handled by the API client
+      // It will automatically notify when processing is complete
     } catch (error: any) {
       console.error('Failed to create project:', error)
       
