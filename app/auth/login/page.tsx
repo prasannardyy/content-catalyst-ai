@@ -20,9 +20,9 @@ export default function LoginPage() {
     setLoading(true)
 
     const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    
+    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+
     if (isDemoMode || !hasFirebaseConfig || !auth) {
       // Demo mode - simulate login
       setTimeout(() => {
@@ -46,9 +46,9 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    
+    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+
     if (isDemoMode || !hasFirebaseConfig || !auth) {
       // Demo mode - simulate Google login
       toast.success('Google login simulated! (Demo Mode)')
