@@ -33,7 +33,7 @@ export default function LandingPage() {
             <span className="text-primary-600"> Complete Content Campaigns</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Turn one long-form video into blog posts, social media content, short clips, 
+            Turn one long-form video into blog posts, social media content, short clips,
             and quote graphics with the power of AI. Save hours of manual work.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

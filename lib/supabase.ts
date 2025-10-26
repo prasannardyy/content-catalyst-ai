@@ -1,4 +1,4 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 
 // Create a mock supabase client for demo mode
 const createMockSupabaseClient = () => ({
@@ -17,7 +17,10 @@ const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
                    !process.env.NEXT_PUBLIC_SUPABASE_URL || 
                    process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_project_url'
 
-export const supabase = isDemoMode ? createMockSupabaseClient() : createClientComponentClient()
+export const supabase = isDemoMode ? createMockSupabaseClient() : createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export type Database = {
   public: {
