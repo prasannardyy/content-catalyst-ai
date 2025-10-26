@@ -251,50 +251,107 @@ const generateContentForVideo = (youtubeUrl: string, projectId: string) => {
   
   const videoId = getVideoId(youtubeUrl)
   
-  // Generate topic-specific content based on common video types
-  const generateTopicContent = () => {
-    const topics = [
-      {
-        title: "Ultimate Guide to Success",
-        blogTitle: "# The Ultimate Guide to Success: Key Insights from the Video\n\nSuccess isn't just about luck—it's about strategy, persistence, and making the right choices at the right time.",
-        linkedinPost: "🚀 Just dropped my latest video on the ultimate guide to success!\n\nKey takeaways:\n✅ Success requires consistent daily habits\n✅ Mindset is everything - think growth, not fixed\n✅ Network with purpose, not just for numbers\n✅ Failure is feedback, not a final verdict\n\nWhat's your #1 success principle? Share below! 👇\n\nWatch the full breakdown: ${youtubeUrl}\n\n#Success #Motivation #PersonalDevelopment #Growth",
-        tweet: "🎯 Success isn't about perfection, it's about progression.\n\nMy latest video breaks down the exact framework I use to achieve my goals.\n\nWatch here: ${youtubeUrl}\n\n#Success #Goals #Motivation",
-        quoteText: "Success is progression, not perfection"
-      },
-      {
-        title: "Productivity Hacks That Actually Work",
-        blogTitle: "# Productivity Hacks That Actually Work: Proven Strategies\n\nStop wasting time on productivity tips that don't work. Here are the science-backed methods that will transform your daily output.",
-        linkedinPost: "⚡ Tired of productivity advice that doesn't work?\n\nI tested 50+ productivity hacks so you don't have to. Here are the only 5 that actually moved the needle:\n\n1️⃣ Time blocking (not just to-do lists)\n2️⃣ The 2-minute rule for small tasks\n3️⃣ Energy management over time management\n4️⃣ Single-tasking with 25-min focus blocks\n5️⃣ Weekly reviews to course-correct\n\nFull breakdown in my latest video: ${youtubeUrl}\n\n#Productivity #TimeManagement #WorkSmart #Efficiency",
-        tweet: "🧠 Productivity isn't about doing more.\n\nIt's about doing the right things at the right time.\n\nMy latest video reveals the 5 hacks that actually work: ${youtubeUrl}\n\n#Productivity #Focus #WorkSmart",
-        quoteText: "Work smarter, not harder"
-      },
-      {
-        title: "Business Growth Strategies",
-        blogTitle: "# Proven Business Growth Strategies: From Startup to Scale\n\nGrowing a business isn't about luck—it's about implementing the right strategies at the right time. Here's what actually works.",
-        linkedinPost: "📈 Want to scale your business but don't know where to start?\n\nI've helped 100+ businesses grow from 6 to 7 figures. Here's the framework:\n\n🎯 Focus on ONE customer avatar first\n💰 Perfect your pricing before scaling\n🔄 Build systems that work without you\n📊 Track metrics that actually matter\n🚀 Invest in team before tools\n\nDetailed breakdown in my latest video: ${youtubeUrl}\n\n#Business #Entrepreneurship #Growth #Scaling #Strategy",
-        tweet: "💡 The biggest business growth mistake?\n\nTrying to serve everyone instead of serving someone perfectly.\n\nNiche down, then scale up. Full strategy: ${youtubeUrl}\n\n#Business #Entrepreneurship #Growth",
-        quoteText: "Niche down, then scale up"
-      },
-      {
-        title: "Life-Changing Mindset Shifts",
-        blogTitle: "# 5 Mindset Shifts That Will Change Your Life Forever\n\nYour mindset determines your reality. These powerful shifts will transform how you see challenges, opportunities, and success.",
-        linkedinPost: "🧠 Your mindset is your superpower.\n\nAfter studying high performers for 10+ years, I've identified the 5 mindset shifts that separate winners from everyone else:\n\n1️⃣ Problems → Opportunities\n2️⃣ Fixed → Growth mindset\n3️⃣ Scarcity → Abundance thinking\n4️⃣ Perfectionism → Progress focus\n5️⃣ Victim → Owner mentality\n\nWhich one resonates most with you?\n\nFull deep-dive: ${youtubeUrl}\n\n#Mindset #PersonalDevelopment #Growth #Success #Psychology",
-        tweet: "🔄 Mindset shift that changed everything:\n\nFrom \"Why is this happening TO me?\"\nTo \"Why is this happening FOR me?\"\n\nGame changer. More shifts in my latest video: ${youtubeUrl}\n\n#Mindset #Growth #Perspective",
-        quoteText: "Your mindset is your superpower"
-      },
-      {
-        title: "Financial Freedom Blueprint",
-        blogTitle: "# The Financial Freedom Blueprint: Step-by-Step Guide\n\nFinancial freedom isn't about making millions—it's about making smart decisions with whatever you earn. Here's your roadmap.",
-        linkedinPost: "💰 Financial freedom isn't about your income—it's about your habits.\n\nI went from broke to financially free using this exact blueprint:\n\n📊 Track every dollar (awareness is key)\n💳 Pay yourself first (automate savings)\n📈 Invest in assets, not liabilities\n🏠 Build multiple income streams\n🎯 Live below your means, invest the difference\n\nStep-by-step guide in my latest video: ${youtubeUrl}\n\n#FinancialFreedom #PersonalFinance #Investing #MoneyTips #WealthBuilding",
-        tweet: "💡 Financial freedom formula:\n\nEarn → Save → Invest → Repeat\n\nSimple but not easy. My complete blueprint: ${youtubeUrl}\n\n#FinancialFreedom #PersonalFinance #Investing",
-        quoteText: "Financial freedom starts with financial discipline"
-      }
-    ]
+  // Analyze the URL to determine content type and generate relevant content
+  const analyzeVideoContent = (url: string) => {
+    const urlLower = url.toLowerCase()
     
-    return topics[Math.floor(Math.random() * topics.length)]
+    // Extract potential keywords from URL parameters or common patterns
+    let detectedTopic = 'general'
+    let title = 'Your Video Content'
+    let hashtags = ['Video', 'Content', 'YouTube']
+    let quoteText = 'Great content creates great conversations'
+    
+    // Business/Entrepreneurship keywords
+    if (urlLower.includes('business') || urlLower.includes('entrepreneur') || urlLower.includes('startup') || 
+        urlLower.includes('marketing') || urlLower.includes('sales') || urlLower.includes('money') ||
+        urlLower.includes('profit') || urlLower.includes('revenue')) {
+      detectedTopic = 'business'
+      title = 'Business & Entrepreneurship Insights'
+      hashtags = ['Business', 'Entrepreneurship', 'Marketing', 'Success', 'Growth']
+      quoteText = 'Success in business comes from serving others'
+    }
+    
+    // Technology/Programming keywords
+    else if (urlLower.includes('tech') || urlLower.includes('code') || urlLower.includes('programming') ||
+             urlLower.includes('software') || urlLower.includes('ai') || urlLower.includes('javascript') ||
+             urlLower.includes('python') || urlLower.includes('react') || urlLower.includes('tutorial')) {
+      detectedTopic = 'technology'
+      title = 'Technology & Programming Guide'
+      hashtags = ['Technology', 'Programming', 'Coding', 'Tech', 'Development']
+      quoteText = 'Code is poetry written for machines'
+    }
+    
+    // Fitness/Health keywords
+    else if (urlLower.includes('fitness') || urlLower.includes('workout') || urlLower.includes('health') ||
+             urlLower.includes('diet') || urlLower.includes('exercise') || urlLower.includes('nutrition') ||
+             urlLower.includes('weight') || urlLower.includes('muscle')) {
+      detectedTopic = 'fitness'
+      title = 'Health & Fitness Journey'
+      hashtags = ['Fitness', 'Health', 'Workout', 'Nutrition', 'Wellness']
+      quoteText = 'Your body is your temple, treat it well'
+    }
+    
+    // Education/Learning keywords
+    else if (urlLower.includes('learn') || urlLower.includes('education') || urlLower.includes('study') ||
+             urlLower.includes('course') || urlLower.includes('lesson') || urlLower.includes('tutorial') ||
+             urlLower.includes('guide') || urlLower.includes('how') || urlLower.includes('tips')) {
+      detectedTopic = 'education'
+      title = 'Learning & Educational Content'
+      hashtags = ['Education', 'Learning', 'Knowledge', 'Skills', 'Growth']
+      quoteText = 'Learning never stops, growing never ends'
+    }
+    
+    // Lifestyle/Personal Development keywords
+    else if (urlLower.includes('lifestyle') || urlLower.includes('motivation') || urlLower.includes('inspiration') ||
+             urlLower.includes('mindset') || urlLower.includes('productivity') || urlLower.includes('habits') ||
+             urlLower.includes('success') || urlLower.includes('goals')) {
+      detectedTopic = 'lifestyle'
+      title = 'Personal Development & Lifestyle'
+      hashtags = ['Lifestyle', 'Motivation', 'PersonalDevelopment', 'Mindset', 'Success']
+      quoteText = 'Your mindset determines your reality'
+    }
+    
+    // Travel/Adventure keywords
+    else if (urlLower.includes('travel') || urlLower.includes('adventure') || urlLower.includes('explore') ||
+             urlLower.includes('journey') || urlLower.includes('destination') || urlLower.includes('trip')) {
+      detectedTopic = 'travel'
+      title = 'Travel & Adventure Experience'
+      hashtags = ['Travel', 'Adventure', 'Explore', 'Journey', 'Experience']
+      quoteText = 'Adventure awaits those who seek it'
+    }
+    
+    // Food/Cooking keywords
+    else if (urlLower.includes('food') || urlLower.includes('cooking') || urlLower.includes('recipe') ||
+             urlLower.includes('kitchen') || urlLower.includes('chef') || urlLower.includes('meal')) {
+      detectedTopic = 'food'
+      title = 'Culinary Adventures & Recipes'
+      hashtags = ['Food', 'Cooking', 'Recipe', 'Culinary', 'Kitchen']
+      quoteText = 'Good food brings people together'
+    }
+    
+    // Gaming keywords
+    else if (urlLower.includes('game') || urlLower.includes('gaming') || urlLower.includes('play') ||
+             urlLower.includes('stream') || urlLower.includes('esports')) {
+      detectedTopic = 'gaming'
+      title = 'Gaming Content & Entertainment'
+      hashtags = ['Gaming', 'Games', 'Entertainment', 'Fun', 'Play']
+      quoteText = 'Gaming is not just play, it\'s an art form'
+    }
+    
+    // Music keywords
+    else if (urlLower.includes('music') || urlLower.includes('song') || urlLower.includes('audio') ||
+             urlLower.includes('sound') || urlLower.includes('beat') || urlLower.includes('melody')) {
+      detectedTopic = 'music'
+      title = 'Musical Journey & Sound'
+      hashtags = ['Music', 'Audio', 'Sound', 'Melody', 'Art']
+      quoteText = 'Music is the universal language of emotion'
+    }
+    
+    return { detectedTopic, title, hashtags, quoteText }
   }
   
-  const topicContent = generateTopicContent()
+  const analysis = analyzeVideoContent(youtubeUrl)
+  const shortUrl = youtubeUrl.length > 50 ? youtubeUrl.substring(0, 47) + '...' : youtubeUrl
   
   // Generate comprehensive content assets
   const assets: Asset[] = [
@@ -303,71 +360,70 @@ const generateContentForVideo = (youtubeUrl: string, projectId: string) => {
       id: `asset_blog_${projectId}`,
       project_id: projectId,
       asset_type: 'blog',
-      content: `${topicContent.blogTitle}
+      content: `# ${analysis.title}: Key Insights from Your Video
 
 ## Introduction
 
-In this comprehensive guide, I break down the exact strategies and insights from my latest video. Whether you're just starting out or looking to level up, these actionable tips will help you achieve your goals faster.
+I just finished watching your video and wanted to share the key insights and takeaways that stood out to me. This content breakdown will help you repurpose your video into multiple formats and reach a wider audience.
 
-## Key Insights from the Video
+## Video Analysis Summary
 
-### Main Takeaway #1: Foundation First
-Before you can build anything meaningful, you need a solid foundation. This means:
-- Clear goals and vision
-- Strong daily habits
-- The right mindset and attitude
-- A system that supports your growth
+Your video covers important aspects of ${analysis.detectedTopic} that many people are looking to understand better. The content is well-structured and provides valuable information that can be repurposed across different platforms.
 
-### Main Takeaway #2: Consistency Beats Perfection
-The most successful people aren't the most talented—they're the most consistent. Small daily actions compound into massive results over time.
+## Key Insights from Your Video
 
-### Main Takeaway #3: Learn, Apply, Adjust
-Success is an iterative process:
-1. Learn new strategies and concepts
-2. Apply them in your own context
-3. Measure results and adjust accordingly
-4. Repeat the cycle
+### Main Takeaway #1: Core Message
+The central theme of your video focuses on delivering practical value to your audience. This approach resonates well because it provides actionable insights that viewers can implement immediately.
 
-## Practical Action Steps
+### Main Takeaway #2: Audience Engagement
+Your presentation style and content structure show a clear understanding of your target audience's needs and interests. This is crucial for building a loyal following.
 
-Based on the video content, here are the specific steps you can take today:
+### Main Takeaway #3: Value Delivery
+The way you present information demonstrates expertise while remaining accessible to viewers at different knowledge levels.
 
-1. **Start with clarity** - Define exactly what you want to achieve
-2. **Create your system** - Build processes that support your goals
-3. **Track your progress** - Measure what matters most
-4. **Stay consistent** - Show up every day, even when you don't feel like it
-5. **Adjust as needed** - Be flexible with your methods, not your goals
+## Content Repurposing Opportunities
 
-## Common Mistakes to Avoid
+Based on your video, here are several ways to extend its reach:
 
-- Trying to do everything at once
-- Focusing on perfection instead of progress
-- Giving up too early when results don't come immediately
-- Not tracking your progress and learning from data
+### Blog Content
+- Expand on the main points with additional examples
+- Create step-by-step guides based on your recommendations
+- Write follow-up posts addressing common questions
 
-## Next Steps
+### Social Media
+- Extract key quotes for Instagram posts
+- Create Twitter threads summarizing main points
+- Share behind-the-scenes insights on LinkedIn
 
-1. Watch the full video for detailed explanations: ${youtubeUrl}
-2. Choose ONE action step to implement this week
-3. Track your progress and adjust as needed
-4. Share your results and lessons learned
+### Visual Content
+- Design quote graphics with your best insights
+- Create infographics summarizing key points
+- Develop carousel posts for Instagram and LinkedIn
+
+## Recommended Next Steps
+
+1. **Watch the original video**: ${youtubeUrl}
+2. **Identify your favorite insights** and share them with your network
+3. **Engage with the content** by leaving thoughtful comments
+4. **Subscribe for more valuable content** like this
 
 ## Conclusion
 
-Success isn't about overnight transformations—it's about consistent daily improvements. Use these insights to create lasting change in your life and business.
+Your video provides excellent value and demonstrates clear expertise in ${analysis.detectedTopic}. The insights shared can help many people improve their understanding and achieve better results.
 
-Remember: The best time to start was yesterday. The second best time is now.
+Keep creating valuable content like this - your audience clearly benefits from your knowledge and experience.
 
 ---
 
-*This blog post was generated based on the insights from: ${youtubeUrl}*
+*This analysis was generated based on: ${youtubeUrl}*
 
-**What's your biggest takeaway? Let me know in the comments below!**`,
+**What was your biggest takeaway from this video? Share your thoughts below!**`,
       metadata: {
-        word_count: 420,
+        word_count: 380,
         reading_time: '3 min read',
         source_video: youtubeUrl,
-        topic: topicContent.title
+        topic: analysis.title,
+        detected_category: analysis.detectedTopic
       },
       created_at: new Date().toISOString()
     },
@@ -377,12 +433,29 @@ Remember: The best time to start was yesterday. The second best time is now.
       id: `asset_linkedin_${projectId}_1`,
       project_id: projectId,
       asset_type: 'linkedin_post',
-      content: topicContent.linkedinPost.replace('${youtubeUrl}', youtubeUrl),
+      content: `🎥 Just shared some valuable insights about ${analysis.detectedTopic}!
+
+This video covers key aspects that many professionals in our field are looking to understand better.
+
+Key highlights:
+✅ Practical, actionable advice you can implement today
+✅ Real-world examples and case studies
+✅ Step-by-step guidance for better results
+✅ Common mistakes to avoid
+
+The response has been incredible, and I wanted to share these insights with my LinkedIn network too.
+
+What's your experience with ${analysis.detectedTopic}? I'd love to hear your thoughts and experiences in the comments! 👇
+
+Watch the full breakdown: ${youtubeUrl}
+
+#${analysis.hashtags.join(' #')}`,
       metadata: {
-        character_count: topicContent.linkedinPost.length,
-        hashtags: ['Success', 'Motivation', 'PersonalDevelopment', 'Growth', 'Video'],
+        character_count: 520,
+        hashtags: analysis.hashtags,
         source_video: youtubeUrl,
-        topic: topicContent.title
+        topic: analysis.title,
+        detected_category: analysis.detectedTopic
       },
       created_at: new Date().toISOString()
     },
@@ -390,12 +463,29 @@ Remember: The best time to start was yesterday. The second best time is now.
       id: `asset_linkedin_${projectId}_2`,
       project_id: projectId,
       asset_type: 'linkedin_post',
-      content: `🎬 Behind the scenes of my latest video creation process!\n\nCreating valuable content isn't just about hitting record. Here's what goes into each video:\n\n📝 Research: 3-4 hours of studying the topic\n🎯 Scripting: Outlining key points and flow\n🎥 Recording: Multiple takes to get it right\n✂️ Editing: Cutting out the fluff, keeping the gold\n📊 Optimization: Thumbnails, titles, descriptions\n\nThe goal? Deliver maximum value in minimum time.\n\nWhat's your content creation process? Share your tips below! 👇\n\nWatch the final result: ${youtubeUrl}\n\n#ContentCreation #VideoMarketing #BehindTheScenes #CreatorLife`,
+      content: `💡 Key insight from my latest video on ${analysis.detectedTopic}:
+
+"${analysis.quoteText}"
+
+This resonates with so many people because it captures the essence of what really matters in this field.
+
+In the full video, I dive deeper into:
+🔍 Why this principle is so important
+📊 Real examples of how it works in practice
+🚀 How you can apply it to your own situation
+⚠️ Common pitfalls to avoid
+
+What's your take on this? Do you agree or have a different perspective?
+
+Full video: ${shortUrl}
+
+#${analysis.hashtags.join(' #')}`,
       metadata: {
-        character_count: 580,
-        hashtags: ['ContentCreation', 'VideoMarketing', 'BehindTheScenes', 'CreatorLife'],
+        character_count: 480,
+        hashtags: analysis.hashtags,
         source_video: youtubeUrl,
-        topic: 'Content Creation Process'
+        topic: analysis.title,
+        detected_category: analysis.detectedTopic
       },
       created_at: new Date().toISOString()
     },
@@ -405,12 +495,13 @@ Remember: The best time to start was yesterday. The second best time is now.
       id: `asset_tweet_${projectId}_1`,
       project_id: projectId,
       asset_type: 'tweet',
-      content: topicContent.tweet.replace('${youtubeUrl}', youtubeUrl),
+      content: `🎥 New video about ${analysis.detectedTopic} is live!\n\nPacked with practical insights you can use right away.\n\nWatch: ${shortUrl}\n\n#${analysis.hashtags.slice(0, 3).join(' #')}`,
       metadata: {
-        character_count: topicContent.tweet.length,
-        hashtags: ['Success', 'Goals', 'Motivation'],
+        character_count: 150,
+        hashtags: analysis.hashtags.slice(0, 3),
         source_video: youtubeUrl,
-        topic: topicContent.title
+        topic: analysis.title,
+        detected_category: analysis.detectedTopic
       },
       created_at: new Date().toISOString()
     },
@@ -418,12 +509,13 @@ Remember: The best time to start was yesterday. The second best time is now.
       id: `asset_tweet_${projectId}_2`,
       project_id: projectId,
       asset_type: 'tweet',
-      content: `🎥 New video just dropped!\n\nPacked with actionable insights you can implement today.\n\nNo fluff, just value.\n\nWatch: ${youtubeUrl}\n\n#NewVideo #Value #ActionableContent`,
+      content: `💡 Key insight from my latest ${analysis.detectedTopic} video:\n\n"${analysis.quoteText}"\n\nFull breakdown: ${shortUrl}\n\n#${analysis.hashtags.slice(0, 2).join(' #')}`,
       metadata: {
-        character_count: 165,
-        hashtags: ['NewVideo', 'Value', 'ActionableContent'],
+        character_count: 140,
+        hashtags: analysis.hashtags.slice(0, 2),
         source_video: youtubeUrl,
-        topic: 'Video Announcement'
+        topic: analysis.title,
+        detected_category: analysis.detectedTopic
       },
       created_at: new Date().toISOString()
     },
@@ -431,12 +523,13 @@ Remember: The best time to start was yesterday. The second best time is now.
       id: `asset_tweet_${projectId}_3`,
       project_id: projectId,
       asset_type: 'tweet',
-      content: `💡 Key insight from my latest video:\n\n"${topicContent.quoteText}"\n\nFull context and more insights: ${youtubeUrl}\n\n#Insights #Wisdom #Growth`,
+      content: `🚀 Just shared my thoughts on ${analysis.detectedTopic}\n\nThis video covers everything you need to know to get started.\n\nCheck it out: ${shortUrl}\n\n#${analysis.hashtags[0]} #Video`,
       metadata: {
-        character_count: 140,
-        hashtags: ['Insights', 'Wisdom', 'Growth'],
+        character_count: 160,
+        hashtags: [analysis.hashtags[0], 'Video'],
         source_video: youtubeUrl,
-        topic: 'Key Quote'
+        topic: analysis.title,
+        detected_category: analysis.detectedTopic
       },
       created_at: new Date().toISOString()
     },
@@ -493,14 +586,15 @@ Remember: The best time to start was yesterday. The second best time is now.
       id: `asset_image_${projectId}_1`,
       project_id: projectId,
       asset_type: 'image',
-      file_url: `https://via.placeholder.com/1080x1080/3b82f6/ffffff?text=${encodeURIComponent(topicContent.quoteText)}`,
+      file_url: `https://via.placeholder.com/1080x1080/3b82f6/ffffff?text=${encodeURIComponent(analysis.quoteText)}`,
       metadata: {
-        quote_text: topicContent.quoteText,
+        quote_text: analysis.quoteText,
         dimensions: '1080x1080',
         format: 'PNG',
         background_color: '#3b82f6',
         text_color: '#ffffff',
-        source_video: youtubeUrl
+        source_video: youtubeUrl,
+        topic: analysis.detectedTopic
       },
       created_at: new Date().toISOString()
     },
@@ -508,14 +602,15 @@ Remember: The best time to start was yesterday. The second best time is now.
       id: `asset_image_${projectId}_2`,
       project_id: projectId,
       asset_type: 'image',
-      file_url: `https://via.placeholder.com/1080x1080/10b981/ffffff?text=Watch+My+Latest+Video`,
+      file_url: `https://via.placeholder.com/1080x1080/10b981/ffffff?text=${encodeURIComponent(`New ${analysis.detectedTopic} Video`)}`,
       metadata: {
-        quote_text: 'Watch My Latest Video',
+        quote_text: `New ${analysis.detectedTopic} Video`,
         dimensions: '1080x1080',
         format: 'PNG',
         background_color: '#10b981',
         text_color: '#ffffff',
-        source_video: youtubeUrl
+        source_video: youtubeUrl,
+        topic: analysis.detectedTopic
       },
       created_at: new Date().toISOString()
     },
@@ -523,14 +618,15 @@ Remember: The best time to start was yesterday. The second best time is now.
       id: `asset_image_${projectId}_3`,
       project_id: projectId,
       asset_type: 'image',
-      file_url: `https://via.placeholder.com/1080x1080/f59e0b/ffffff?text=New+Content+Alert`,
+      file_url: `https://via.placeholder.com/1080x1080/f59e0b/ffffff?text=${encodeURIComponent(`${analysis.title} - Watch Now`)}`,
       metadata: {
-        quote_text: 'New Content Alert',
+        quote_text: `${analysis.title} - Watch Now`,
         dimensions: '1080x1080',
         format: 'PNG',
         background_color: '#f59e0b',
         text_color: '#ffffff',
-        source_video: youtubeUrl
+        source_video: youtubeUrl,
+        topic: analysis.detectedTopic
       },
       created_at: new Date().toISOString()
     }
