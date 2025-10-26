@@ -1,0 +1,15 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+firebase-admin==6.2.0
+google-cloud-videointelligence==2.11.1
+google-cloud-storage==2.10.0
+azure-ai-textanalytics==5.3.0
+requests==2.31.0
+yt-dlp==2023.10.13
+moviepy==1.0.3
+python-multipart==0.0.6
+python-dotenv==1.0.0
+pydantic==2.5.0
+httpx==0.25.2
+pillow==10.1.0
+bannerbear==1.0.0

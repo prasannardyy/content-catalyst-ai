@@ -244,6 +244,7 @@ Best AI applications:
 
 import { getVideoId, getVideoMetadata, generateVideoBasedContent, VideoAnalysis } from './youtube-analyzer'
 import { generateQuoteImages, generateThumbnailImages } from './image-generator'
+import { generateAIContent } from './ai-content-generator'
 
 // Function to generate content based on YouTube URL
 const generateContentForVideo = async (youtubeUrl: string, projectId: string) => {
@@ -272,8 +273,8 @@ const generateContentForVideo = async (youtubeUrl: string, projectId: string) =>
     summary: videoData.summary || 'This video provides valuable insights and practical advice.'
   }
 
-  // Generate content based on video analysis
-  const generatedContent = generateVideoBasedContent(analysis)
+  // Generate content based on video analysis using AI
+  const generatedContent = await generateAIContent(analysis)
   
   // Generate quote images
   const quoteImages = await generateQuoteImages(generatedContent.quotes, videoId)

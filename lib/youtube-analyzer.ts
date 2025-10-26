@@ -21,24 +21,281 @@ export const getVideoId = (url: string): string => {
   return match ? match[1] : ''
 }
 
-// Get video metadata using YouTube Data API
+// Get video metadata using YouTube Data API and other free APIs
 export const getVideoMetadata = async (videoId: string, url: string): Promise<Partial<VideoAnalysis>> => {
   try {
-    // For demo purposes, we'll simulate API response based on URL analysis
-    // In production, you would use: https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${API_KEY}&part=snippet,statistics,contentDetails
+    // Try to get real video data from multiple sources
+    let videoData = await fetchRealVideoData(videoId)
     
-    // Analyze the URL to determine content type
-    const mockData = generateMockVideoData(videoId, url)
+    if (!videoData || !videoData.title) {
+      // Fallback to URL analysis if APIs fail
+      console.log('Using URL analysis fallback')
+      videoData = generateMockVideoData(videoId, url)
+    }
     
-    return mockData
+    return videoData
   } catch (error) {
     console.error('Error fetching video metadata:', error)
+    // Final fallback
+    return generateMockVideoData(videoId, url)
+  }
+}
+
+// Fetch real video data using multiple free APIs
+const fetchRealVideoData = async (videoId: string): Promise<Partial<VideoAnalysis> | null> => {
+  try {
+    // Method 1: Try YouTube oEmbed API (no API key required)
+    const oembedData = await fetchYouTubeOEmbed(videoId)
+    if (oembedData) {
+      return oembedData
+    }
+
+    // Method 2: Try scraping video page (as fallback)
+    const scrapedData = await scrapeVideoData(videoId)
+    if (scrapedData) {
+      return scrapedData
+    }
+
+    return null
+  } catch (error) {
+    console.error('Error fetching real video data:', error)
+    return null
+  }
+}
+
+// Use YouTube oEmbed API (no API key required)
+const fetchYouTubeOEmbed = async (videoId: string): Promise<Partial<VideoAnalysis> | null> => {
+  try {
+    const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+    const response = await fetch(oembedUrl)
+    
+    if (!response.ok) {
+      throw new Error(`oEmbed API failed: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    
+    // Extract meaningful information from the title and author
+    const title = data.title || 'Unknown Video'
+    const channelTitle = data.author_name || 'Unknown Channel'
+    
+    // Try to get transcript for better analysis
+    const transcript = await getVideoTranscript(videoId)
+    
+    // Analyze with or without transcript
+    const analysis = transcript 
+      ? analyzeVideoWithTranscript(title, channelTitle, transcript, videoId)
+      : analyzeVideoFromTitle(title, channelTitle, videoId)
+    
     return {
       videoId,
-      title: 'Video Analysis',
-      description: 'Analyzing video content...',
-      category: 'general'
+      title,
+      channelTitle,
+      thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+      duration: 'Unknown',
+      viewCount: 'Unknown',
+      publishedAt: new Date().toISOString(),
+      ...analysis
     }
+  } catch (error) {
+    console.error('YouTube oEmbed failed:', error)
+    return null
+  }
+}
+
+// Analyze video based on actual title and channel name
+const analyzeVideoFromTitle = (title: string, channelTitle: string, videoId: string): Partial<VideoAnalysis> => {
+  const titleLower = title.toLowerCase()
+  const channelLower = channelTitle.toLowerCase()
+  const combinedText = `${titleLower} ${channelLower}`
+  
+  // Extract keywords from title for tags
+  const extractedTags = extractTagsFromTitle(title)
+  
+  // Determine category based on title and channel analysis
+  let category = 'general'
+  let keyTopics: string[] = []
+  let summary = ''
+  
+  if (isMusicContent(combinedText)) {
+    category = 'music'
+    keyTopics = ['Musical Composition', 'Artist Performance', 'Song Structure', 'Audio Production', 'Lyrical Content']
+    summary = `This music video showcases artistic talent and creativity. The song features compelling melodies and production quality that resonates with listeners.`
+  } else if (isTechContent(combinedText)) {
+    category = 'technology'
+    keyTopics = ['Technical Concepts', 'Implementation Guide', 'Best Practices', 'Problem Solving', 'Industry Insights']
+    summary = `This technical content provides valuable insights and practical knowledge for developers and tech enthusiasts.`
+  } else if (isBusinessContent(combinedText)) {
+    category = 'business'
+    keyTopics = ['Business Strategy', 'Growth Tactics', 'Market Analysis', 'Leadership Skills', 'Success Principles']
+    summary = `This business content offers strategic insights and actionable advice for entrepreneurs and business professionals.`
+  } else if (isFitnessContent(combinedText)) {
+    category = 'fitness'
+    keyTopics = ['Workout Techniques', 'Nutrition Guidance', 'Health Tips', 'Exercise Form', 'Fitness Goals']
+    summary = `This fitness content provides practical guidance for improving health, strength, and overall wellness.`
+  } else if (isEducationContent(combinedText)) {
+    category = 'education'
+    keyTopics = ['Learning Strategies', 'Knowledge Building', 'Skill Development', 'Educational Methods', 'Study Techniques']
+    summary = `This educational content offers valuable learning opportunities and knowledge-building strategies.`
+  } else if (isTravelContent(combinedText)) {
+    category = 'travel'
+    keyTopics = ['Travel Tips', 'Destination Guide', 'Cultural Insights', 'Adventure Planning', 'Local Experiences']
+    summary = `This travel content provides insights and inspiration for exploring new destinations and cultures.`
+  } else if (isGamingContent(combinedText)) {
+    category = 'gaming'
+    keyTopics = ['Gameplay Strategies', 'Game Review', 'Gaming Tips', 'Entertainment Value', 'Gaming Community']
+    summary = `This gaming content offers entertainment, strategies, and insights for gaming enthusiasts.`
+  } else if (isCookingContent(combinedText)) {
+    category = 'cooking'
+    keyTopics = ['Recipe Instructions', 'Cooking Techniques', 'Ingredient Tips', 'Kitchen Skills', 'Food Preparation']
+    summary = `This cooking content provides delicious recipes and culinary techniques for food enthusiasts.`
+  } else {
+    // Generate content based on actual title keywords
+    const titleWords = title.split(' ').filter(word => word.length > 3)
+    keyTopics = titleWords.slice(0, 5).map(word => `${word.charAt(0).toUpperCase() + word.slice(1)} Insights`)
+    summary = `This content about "${title}" provides valuable insights and information on the topic.`
+  }
+  
+  return {
+    category,
+    tags: [...extractedTags, category],
+    keyTopics,
+    summary,
+    description: summary
+  }
+}
+
+// Extract relevant tags from video title
+const extractTagsFromTitle = (title: string): string[] => {
+  const titleLower = title.toLowerCase()
+  const commonTags: string[] = []
+  
+  // Technology tags
+  if (titleLower.includes('javascript') || titleLower.includes('js')) commonTags.push('javascript')
+  if (titleLower.includes('python')) commonTags.push('python')
+  if (titleLower.includes('react')) commonTags.push('react')
+  if (titleLower.includes('ai') || titleLower.includes('artificial intelligence')) commonTags.push('ai')
+  if (titleLower.includes('tutorial')) commonTags.push('tutorial')
+  if (titleLower.includes('guide')) commonTags.push('guide')
+  
+  // Business tags
+  if (titleLower.includes('business')) commonTags.push('business')
+  if (titleLower.includes('marketing')) commonTags.push('marketing')
+  if (titleLower.includes('entrepreneur')) commonTags.push('entrepreneurship')
+  if (titleLower.includes('startup')) commonTags.push('startup')
+  if (titleLower.includes('success')) commonTags.push('success')
+  
+  // Fitness tags
+  if (titleLower.includes('workout')) commonTags.push('workout')
+  if (titleLower.includes('fitness')) commonTags.push('fitness')
+  if (titleLower.includes('health')) commonTags.push('health')
+  if (titleLower.includes('diet')) commonTags.push('diet')
+  
+  // Music tags
+  if (titleLower.includes('music')) commonTags.push('music')
+  if (titleLower.includes('song')) commonTags.push('song')
+  if (titleLower.includes('cover')) commonTags.push('cover')
+  if (titleLower.includes('remix')) commonTags.push('remix')
+  
+  // General tags
+  if (titleLower.includes('how to')) commonTags.push('howto')
+  if (titleLower.includes('tips')) commonTags.push('tips')
+  if (titleLower.includes('review')) commonTags.push('review')
+  if (titleLower.includes('2024') || titleLower.includes('2025')) commonTags.push('2024')
+  
+  return commonTags.slice(0, 8) // Limit to 8 tags
+}
+
+// Enhanced content type detection
+const isMusicContent = (text: string): boolean => {
+  const musicKeywords = ['music', 'song', 'audio', 'melody', 'lyrics', 'album', 'artist', 'band', 'singer', 'vocal', 'instrumental', 'remix', 'cover', 'official', 'mv', 'single', 'track', 'vevo', 'records']
+  return musicKeywords.some(keyword => text.includes(keyword))
+}
+
+const isCookingContent = (text: string): boolean => {
+  const cookingKeywords = ['recipe', 'cooking', 'food', 'kitchen', 'chef', 'baking', 'meal', 'dish', 'ingredient', 'cuisine']
+  return cookingKeywords.some(keyword => text.includes(keyword))
+}
+
+// Try to get video transcript using youtube-transcript package
+const getVideoTranscript = async (videoId: string): Promise<string | null> => {
+  try {
+    // Note: This would require the youtube-transcript package to be properly configured
+    // For now, we'll return null and rely on title/description analysis
+    // In a real implementation, you could use:
+    // const transcript = await YoutubeTranscript.fetchTranscript(videoId)
+    // return transcript.map(item => item.text).join(' ')
+    return null
+  } catch (error) {
+    console.error('Transcript fetch failed:', error)
+    return null
+  }
+}
+
+// Enhanced video analysis with transcript support
+const analyzeVideoWithTranscript = (title: string, channelTitle: string, transcript: string | null, videoId: string): Partial<VideoAnalysis> => {
+  // If we have transcript, use it for better analysis
+  if (transcript) {
+    const combinedText = `${title} ${channelTitle} ${transcript}`.toLowerCase()
+    const analysis = analyzeVideoFromTitle(title, channelTitle, videoId)
+    
+    // Enhance analysis with transcript insights
+    const transcriptKeywords = extractKeywordsFromTranscript(transcript)
+    const enhancedTags = [...(analysis.tags || []), ...transcriptKeywords].slice(0, 10)
+    
+    return {
+      ...analysis,
+      tags: enhancedTags,
+      transcript: transcript.substring(0, 500) + '...', // Store first 500 chars
+      summary: generateSummaryFromTranscript(transcript, analysis.category || 'general')
+    }
+  }
+  
+  // Fallback to title-based analysis
+  return analyzeVideoFromTitle(title, channelTitle, videoId)
+}
+
+// Extract keywords from transcript
+const extractKeywordsFromTranscript = (transcript: string): string[] => {
+  const words = transcript.toLowerCase().split(/\s+/)
+  const commonWords = new Set(['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'])
+  
+  const wordCount = new Map<string, number>()
+  
+  words.forEach(word => {
+    const cleanWord = word.replace(/[^\w]/g, '')
+    if (cleanWord.length > 3 && !commonWords.has(cleanWord)) {
+      wordCount.set(cleanWord, (wordCount.get(cleanWord) || 0) + 1)
+    }
+  })
+  
+  return Array.from(wordCount.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([word]) => word)
+}
+
+// Generate summary from transcript
+const generateSummaryFromTranscript = (transcript: string, category: string): string => {
+  const sentences = transcript.split(/[.!?]+/).filter(s => s.trim().length > 20)
+  const firstSentences = sentences.slice(0, 3).join('. ')
+  
+  if (firstSentences.length > 100) {
+    return `This ${category} content explores: ${firstSentences.substring(0, 200)}...`
+  }
+  
+  return `This ${category} content provides valuable insights and practical information on the topic.`
+}
+
+// Fallback scraping method (basic)
+const scrapeVideoData = async (videoId: string): Promise<Partial<VideoAnalysis> | null> => {
+  try {
+    // This is a basic fallback - in a real implementation, you might use a more sophisticated scraping service
+    // For now, we'll return null to fall back to URL analysis
+    return null
+  } catch (error) {
+    console.error('Video scraping failed:', error)
+    return null
   }
 }
 
@@ -251,121 +508,240 @@ export const generateVideoBasedContent = (analysis: VideoAnalysis) => {
 }
 
 const generateBlogPost = (analysis: VideoAnalysis) => {
-  const { title, summary, keyTopics, category } = analysis
+  const { title, summary, keyTopics, category, tags, channelTitle } = analysis
+  
+  // Generate SEO-friendly blog post with relevant tags and content
+  const seoTags = tags.map(tag => `#${tag}`).join(' ')
   
   if (category === 'music') {
-    return `# ${title}: Musical Journey and Artistic Expression
+    return `# ${title} - Music Review and Analysis
 
 ## Introduction
 
-Music has the incredible power to move us, inspire us, and connect us to emotions we didn't even know we had. This song is a perfect example of how artistry and creativity can come together to create something truly special.
+"${title}" by ${channelTitle || 'the artist'} is a captivating musical piece that deserves attention from music lovers everywhere. This comprehensive review explores what makes this song special and why it's worth your time.
 
-## About This Musical Piece
+## About This Song
 
 ${summary}
 
-## Musical Elements
+The track showcases exceptional artistry and demonstrates the creator's unique musical vision. From the production quality to the emotional depth, every element has been carefully crafted to create a memorable listening experience.
 
-${keyTopics.map((topic, index) => `### ${index + 1}. ${topic}
+## Musical Analysis
 
-This aspect of the song showcases the artist's talent and attention to detail. The way these elements work together creates a cohesive and emotionally resonant experience.`).join('\n\n')}
+${keyTopics.map((topic, index) => `### ${topic}
 
-## What Makes This Song Special
+${generateMusicTopicContent(topic, title)}`).join('\n\n')}
 
-### Artistic Vision
-The creative vision behind this piece is evident in every note and lyric. The artist has crafted something that speaks to listeners on multiple levels.
+## What Makes "${title}" Stand Out
 
-### Emotional Connection
-Music is all about emotion, and this song delivers. Whether it's the melody, the lyrics, or the overall production, there's something here that resonates with the human experience.
+### Unique Musical Elements
+This song brings something fresh to the music landscape. The combination of melody, rhythm, and production creates a distinctive sound that sets it apart from typical releases.
 
-### Technical Excellence
-Beyond the emotional impact, the technical aspects of this song demonstrate real skill and craftsmanship in music production and performance.
+### Emotional Resonance
+Great music connects with listeners on an emotional level, and this track succeeds in creating that connection. Whether through the lyrics, melody, or overall atmosphere, it speaks to the human experience.
+
+### Production Quality
+The technical aspects of this song demonstrate professional-level production. The sound engineering, mixing, and mastering all contribute to a polished final product.
 
 ## Why You Should Listen
 
-Here's why this song deserves your attention:
+Here are compelling reasons to give this song your attention:
 
-1. **Unique Sound** - The artist brings something fresh and distinctive to the music scene
-2. **Emotional Depth** - The song connects with listeners on a personal level
-3. **Quality Production** - Professional sound quality and attention to detail
-4. **Artistic Merit** - Demonstrates genuine creativity and musical talent
+1. **Artistic Innovation** - Fresh approach to musical composition and arrangement
+2. **Emotional Impact** - Creates genuine connection with listeners
+3. **Technical Excellence** - High-quality production and sound design
+4. **Cultural Relevance** - Reflects current musical trends and influences
+5. **Replay Value** - Rewards multiple listens with new discoveries
 
 ## Final Thoughts
 
-Music is a universal language that transcends boundaries and brings people together. This song is a beautiful example of what happens when talent, creativity, and passion come together.
+"${title}" represents quality music that deserves recognition. ${channelTitle || 'The artist'} has created something that both entertains and inspires, making it a valuable addition to any music collection.
 
-Whether you're a music lover, an aspiring artist, or just someone who appreciates good art, this piece has something to offer.
+Whether you're a casual listener or a serious music enthusiast, this track offers something meaningful. It's the kind of song that reminds us why music remains such a powerful form of artistic expression.
 
-## Listen and Share
+## Tags and Keywords
 
-- **Experience the full song**: Listen to appreciate all the nuances and details
-- **Share with others**: Great music is meant to be shared
-- **Support the artist**: Show appreciation for their creative work
+${seoTags}
 
-*What did you think of this song? Share your thoughts and let me know what resonated with you most!*`
+**Related Topics**: ${keyTopics.join(', ')}
+
+*Have you listened to "${title}"? Share your thoughts and let me know what aspects of the song resonated most with you!*`
   }
   
-  // Default blog post for other categories
-  return `# ${title}: Complete Guide and Key Insights
+  if (category === 'technology') {
+    return `# ${title} - Complete Technical Guide and Analysis
 
 ## Introduction
 
-I recently discovered this incredible content about ${category} that completely changed my perspective. The insights shared were so valuable that I had to break them down and share the key takeaways with you.
+In the rapidly evolving world of technology, "${title}" by ${channelTitle || 'the creator'} provides valuable insights that every tech professional should know. This comprehensive breakdown covers the key concepts and practical applications discussed in this content.
+
+## Technical Overview
+
+${summary}
+
+This content addresses important technological concepts and provides practical guidance for implementation. Whether you're a beginner or experienced professional, there are valuable takeaways for everyone.
+
+## Key Technical Concepts
+
+${keyTopics.map((topic, index) => `### ${topic}
+
+${generateTechTopicContent(topic, title)}`).join('\n\n')}
+
+## Practical Applications
+
+### Implementation Strategy
+The techniques and concepts presented can be immediately applied to real-world projects. The step-by-step approach makes complex topics accessible and actionable.
+
+### Best Practices
+Following industry best practices is crucial for success in technology. This content highlights proven methods and approaches that have been tested in production environments.
+
+### Problem-Solving Approach
+Technical challenges require systematic problem-solving. The methodologies discussed provide frameworks for tackling complex issues effectively.
+
+## Key Takeaways for Developers
+
+1. **Foundation First** - Master fundamental concepts before advancing to complex topics
+2. **Practical Application** - Apply learning through hands-on projects and real-world scenarios
+3. **Continuous Learning** - Stay updated with evolving technologies and industry trends
+4. **Community Engagement** - Learn from others and contribute to the tech community
+5. **Quality Focus** - Prioritize code quality, testing, and maintainable solutions
+
+## Implementation Guide
+
+### Getting Started
+Begin by understanding the core concepts presented. Take time to experiment with the ideas and see how they apply to your specific use case.
+
+### Advanced Techniques
+Once you've mastered the basics, explore the more advanced concepts. These often provide the most significant improvements to your technical skills.
+
+### Real-World Application
+The true value comes from applying these concepts to actual projects. Start small and gradually incorporate more advanced techniques as you gain confidence.
+
+## Conclusion
+
+"${title}" offers valuable technical insights that can enhance your development skills and career prospects. ${channelTitle || 'The creator'} has provided practical guidance that bridges the gap between theory and real-world application.
+
+The combination of clear explanations, practical examples, and actionable advice makes this content essential viewing for anyone serious about technology and development.
+
+## Tags and Resources
+
+${seoTags}
+
+**Technical Topics**: ${keyTopics.join(', ')}
+**Skill Level**: Suitable for beginners to advanced practitioners
+**Category**: ${category}
+
+*What's your experience with these technical concepts? Share your thoughts and any additional insights you've discovered!*`
+  }
+  
+  // Enhanced default blog post for other categories
+  return `# ${title} - Comprehensive Guide and Key Insights
+
+## Introduction
+
+"${title}" by ${channelTitle || 'the creator'} delivers exceptional value and insights that are worth exploring in detail. This comprehensive analysis breaks down the key concepts and provides actionable takeaways you can implement immediately.
 
 ## Content Overview
 
 ${summary}
 
-## Key Topics Covered
+This content stands out for its practical approach and real-world applicability. The insights shared are based on proven strategies and genuine experience in the field.
 
-${keyTopics.map((topic, index) => `### ${index + 1}. ${topic}
+## Detailed Analysis
 
-This section provided actionable insights that you can implement immediately. The practical approach makes it easy to understand and apply these concepts in real-world situations.`).join('\n\n')}
+${keyTopics.map((topic, index) => `### ${topic}
 
-## Main Takeaways
+${generateTopicContent(topic, category, title)}`).join('\n\n')}
 
-Based on the content, here are the most important points to remember:
+## Key Insights and Takeaways
 
-### Practical Application
-The strategies discussed aren't just theoretical - they're proven methods that have been tested and refined. Each technique comes with specific steps you can follow.
+### Practical Value
+The strategies and concepts presented aren't just theoretical - they're proven methods that have been tested and refined through real-world application. Each technique comes with specific steps you can follow.
 
-### Real-World Results
-What makes this content particularly valuable is the focus on measurable outcomes. You're not just learning concepts, but gaining tools that produce tangible results.
+### Actionable Advice
+What makes this content particularly valuable is its focus on actionable insights. You're not just learning concepts, but gaining tools and strategies that produce measurable results.
 
-### Implementation Strategy
-The content provides a clear roadmap for implementation, making it easy to get started regardless of your current level of experience.
+### Implementation Framework
+The content provides a clear roadmap for implementation, making it accessible regardless of your current level of experience or expertise in ${category}.
 
-## Action Steps
+## Step-by-Step Implementation
 
-Here's how you can apply these insights:
+### Phase 1: Foundation Building
+Start by understanding and implementing the fundamental concepts. These form the foundation for more advanced strategies and ensure you have a solid base to build upon.
 
-1. **Start with the fundamentals** - Master the basics before moving to advanced techniques
-2. **Focus on consistency** - Small daily actions compound into significant results
-3. **Track your progress** - Measure what matters to stay motivated and adjust your approach
-4. **Stay committed** - Success requires persistence and dedication to the process
+### Phase 2: Skill Development
+Focus on developing the specific skills and techniques highlighted in the content. Practice consistently and track your progress to ensure continuous improvement.
+
+### Phase 3: Advanced Application
+Once you've mastered the basics, explore the more advanced concepts and strategies. These often provide the most significant improvements and competitive advantages.
+
+### Phase 4: Optimization and Refinement
+Continuously refine your approach based on results and feedback. The best practitioners are always looking for ways to improve and optimize their methods.
+
+## Why This Content Matters
+
+1. **Proven Strategies** - Based on real-world experience and tested methods
+2. **Practical Focus** - Emphasizes actionable advice over theoretical concepts
+3. **Clear Guidance** - Provides step-by-step instructions and frameworks
+4. **Comprehensive Coverage** - Addresses multiple aspects of ${category}
+5. **Results-Oriented** - Focuses on achieving measurable outcomes
 
 ## Conclusion
 
-This content delivers exceptional value for anyone interested in ${category}. The combination of practical advice, real-world examples, and actionable strategies makes it a must-watch.
+"${title}" represents high-quality content that delivers genuine value for anyone interested in ${category}. ${channelTitle || 'The creator'} has provided insights and strategies that can make a real difference in your approach and results.
 
-The insights shared can genuinely transform your approach to ${category} and help you achieve better results faster.
+The combination of practical advice, clear explanations, and actionable strategies makes this content essential for anyone serious about improving their ${category} skills and knowledge.
 
-## Resources
+## Resources and Next Steps
 
-- **Original Content**: Watch the full breakdown for detailed explanations and examples
-- **Key Topics**: ${keyTopics.join(', ')}
-- **Category**: ${category}
+${seoTags}
 
-*What was your biggest takeaway? Share your thoughts and let me know how you plan to implement these strategies!*`
+**Key Topics**: ${keyTopics.join(', ')}
+**Content Category**: ${category}
+**Recommended For**: Anyone interested in ${category} and practical skill development
+
+*What was your biggest takeaway from this content? Share your thoughts and let me know how you plan to implement these strategies!*`
+}
+
+// Helper functions for generating topic-specific content
+const generateMusicTopicContent = (topic: string, title: string): string => {
+  const topicLower = topic.toLowerCase()
+  if (topicLower.includes('composition')) {
+    return `The compositional elements in "${title}" demonstrate sophisticated musical arrangement. The structure, harmony, and melodic development show careful attention to musical theory while maintaining accessibility for listeners.`
+  } else if (topicLower.includes('performance')) {
+    return `The performance quality in this track showcases the artist's technical skill and emotional expression. The delivery is both technically proficient and emotionally engaging.`
+  } else if (topicLower.includes('production')) {
+    return `The production quality of "${title}" meets professional standards with clear mixing, appropriate use of effects, and balanced sound design that enhances the overall listening experience.`
+  }
+  return `This aspect of "${title}" contributes significantly to the overall impact and quality of the musical piece, demonstrating the artist's attention to detail and commitment to excellence.`
+}
+
+const generateTechTopicContent = (topic: string, title: string): string => {
+  const topicLower = topic.toLowerCase()
+  if (topicLower.includes('implementation')) {
+    return `The implementation strategies discussed provide practical approaches to solving real-world technical challenges. These methods have been tested in production environments and proven effective.`
+  } else if (topicLower.includes('best practices')) {
+    return `Following established best practices is crucial for maintainable, scalable solutions. The practices outlined help ensure code quality and long-term project success.`
+  } else if (topicLower.includes('concepts')) {
+    return `Understanding these fundamental concepts is essential for technical proficiency. They form the foundation for more advanced topics and practical application.`
+  }
+  return `This technical aspect provides valuable insights that can improve your development skills and project outcomes. The practical approach makes complex topics accessible and actionable.`
+}
+
+const generateTopicContent = (topic: string, category: string, title: string): string => {
+  return `This section of "${title}" provides valuable insights into ${topic.toLowerCase()}. The practical approach and real-world examples make it easy to understand and apply these concepts in your own ${category} journey. The strategies discussed are proven methods that can lead to measurable improvements and better results.`
 }
 
 const generateLinkedInPosts = (analysis: VideoAnalysis) => {
-  const { title, category, keyTopics, tags } = analysis
+  const { title, category, keyTopics, tags, channelTitle, summary } = analysis
+  
+  // Create relevant hashtags based on content
+  const relevantHashtags = generateRelevantHashtags(tags, category)
   
   if (category === 'music') {
     return [
       {
-        content: `🎵 Just discovered an incredible song: "${title}"
+        content: `🎵 Just discovered an incredible song: "${title}" by ${channelTitle || 'this talented artist'}
 
 The artistry and creativity in this piece are absolutely stunning! Here's what makes it special:
 
@@ -373,132 +749,256 @@ ${keyTopics.slice(0, 4).map((topic, i) => `${i + 1}️⃣ ${topic}`).join('\n')}
 
 Music has this amazing power to connect us emotionally and inspire creativity. This song is a perfect example of how art can move us and bring people together.
 
+The production quality and artistic vision really shine through. It's the kind of music that stays with you long after the first listen.
+
 What's your favorite type of music? I'd love to hear what songs have inspired you recently!
 
-#${tags.join(' #')}`,
-        hashtags: tags
+${relevantHashtags.slice(0, 8).map(tag => `#${tag}`).join(' ')}`,
+        hashtags: relevantHashtags.slice(0, 8)
       },
       {
-        content: `🎶 Amazing musical discovery today!
+        content: `🎶 Amazing musical discovery: "${title}"
 
-"${analysis.summary.split('.')[0]}."
+${summary.split('.')[0]}.
 
-There's something magical about discovering new music that resonates with your soul. This song captures emotions and tells a story in such a beautiful way.
+There's something magical about discovering new music that resonates with your soul. This track captures emotions and tells a story in such a beautiful way.
+
+The artist's approach to ${keyTopics[0]?.toLowerCase() || 'musical composition'} is particularly impressive. It shows real understanding of what makes music memorable and impactful.
 
 Music is truly a universal language that transcends boundaries. What's the last song that gave you chills?
 
-#${tags.slice(0, 3).join(' #')}`,
-        hashtags: tags.slice(0, 3)
+${relevantHashtags.slice(0, 6).map(tag => `#${tag}`).join(' ')}`,
+        hashtags: relevantHashtags.slice(0, 6)
       }
     ]
   }
   
-  // Default LinkedIn posts for other categories
+  if (category === 'technology') {
+    return [
+      {
+        content: `💻 Just watched an excellent tech video: "${title}" by ${channelTitle || 'this creator'}
+
+The technical insights were absolutely game-changing! Here are the key takeaways:
+
+${keyTopics.slice(0, 4).map((topic, i) => `${i + 1}️⃣ ${topic}`).join('\n')}
+
+What I love about this content is the practical approach - these aren't just theoretical concepts, but proven strategies you can implement in your projects immediately.
+
+The examples and explanations make complex topics accessible, which is exactly what the tech community needs more of.
+
+Have you worked with these technologies recently? What's been your biggest challenge or breakthrough?
+
+${relevantHashtags.slice(0, 8).map(tag => `#${tag}`).join(' ')}`,
+        hashtags: relevantHashtags.slice(0, 8)
+      },
+      {
+        content: `🚀 Key insight from "${title}":
+
+${summary.split('.')[0]}.
+
+This completely shifted my perspective on how to approach ${category} challenges. The practical examples and step-by-step guidance make it so much easier to understand and implement.
+
+The creator's expertise really shows through in how they break down complex concepts into digestible, actionable steps.
+
+What's your experience with these technologies? I'd love to hear your thoughts and any additional insights you've discovered!
+
+${relevantHashtags.slice(0, 6).map(tag => `#${tag}`).join(' ')}`,
+        hashtags: relevantHashtags.slice(0, 6)
+      }
+    ]
+  }
+  
+  // Enhanced default LinkedIn posts for other categories
   return [
     {
-      content: `🎥 Just discovered incredible content: "${title}"
+      content: `🎥 Just discovered valuable content: "${title}" by ${channelTitle || 'this creator'}
 
 The insights on ${category} were absolutely game-changing! Here are the key takeaways:
 
 ${keyTopics.slice(0, 4).map((topic, i) => `${i + 1}️⃣ ${topic}`).join('\n')}
 
-What resonated most with me was the practical approach - these aren't just theories, but proven strategies you can implement immediately.
+What resonated most with me was the practical approach - these aren't just theories, but proven strategies you can implement immediately to see real results.
 
-Have you explored ${category} recently? What's been your biggest challenge or success?
+The quality of explanation and real-world examples make this content stand out in the ${category} space.
 
-#${tags.join(' #')}`,
-      hashtags: tags
+Have you explored ${category} recently? What's been your biggest challenge or success story?
+
+${relevantHashtags.slice(0, 8).map(tag => `#${tag}`).join(' ')}`,
+      hashtags: relevantHashtags.slice(0, 8)
     },
     {
-      content: `💡 Key insight from today's content on ${category}:
+      content: `💡 Key insight from "${title}":
 
-"${analysis.summary.split('.')[0]}."
+${summary.split('.')[0]}.
 
 This completely shifted my perspective on how to approach ${category}. The practical examples and step-by-step guidance make it so much easier to understand and implement.
 
-What's your experience with ${category}? I'd love to hear your thoughts and any tips you've discovered!
+I particularly appreciated the focus on ${keyTopics[0]?.toLowerCase() || 'practical application'} - it's exactly what professionals in this field need to know.
 
-#${tags.slice(0, 3).join(' #')}`,
-      hashtags: tags.slice(0, 3)
+What's your experience with ${category}? I'd love to hear your thoughts and any tips you've discovered along the way!
+
+${relevantHashtags.slice(0, 6).map(tag => `#${tag}`).join(' ')}`,
+      hashtags: relevantHashtags.slice(0, 6)
     }
   ]
 }
 
 const generateTweets = (analysis: VideoAnalysis) => {
-  const { title, category, keyTopics, tags } = analysis
+  const { title, category, keyTopics, tags, channelTitle, summary } = analysis
+  
+  // Create relevant hashtags for Twitter
+  const relevantHashtags = generateRelevantHashtags(tags, category)
   
   if (category === 'music') {
     return [
       {
-        content: `🎵 Just discovered: "${title.length > 60 ? title.substring(0, 57) + '...' : title}"
+        content: `🎵 Just discovered: "${title.length > 80 ? title.substring(0, 77) + '...' : title}"
 
 This song is absolutely incredible! 
 
-The ${keyTopics[0].toLowerCase()} is just *chef's kiss* 🤌
+The ${keyTopics[0]?.toLowerCase() || 'musical composition'} is just *chef's kiss* 🤌
 
-#${tags.slice(0, 2).join(' #')}`,
-        hashtags: tags.slice(0, 2)
+By ${channelTitle || 'this talented artist'}
+
+#${relevantHashtags.slice(0, 3).join(' #')}`,
+        hashtags: relevantHashtags.slice(0, 3)
       },
       {
         content: `🎶 New music discovery!
 
-"${analysis.summary.split('.')[0]}."
+${summary.split('.')[0]}.
 
 When a song hits different... you know you've found something special ✨
 
-#${tags[0]} #${category}`,
-        hashtags: [tags[0], category]
+#${relevantHashtags.slice(0, 2).join(' #')}`,
+        hashtags: relevantHashtags.slice(0, 2)
       },
       {
         content: `🔥 This song though...
 
-Amazing ${keyTopics.slice(0, 2).join(' & ').toLowerCase()}
+Amazing ${keyTopics.slice(0, 2).map(t => t.toLowerCase()).join(' & ')}
 
 Music that actually moves your soul 🎵
 
-#${tags.slice(0, 3).join(' #')}`,
-        hashtags: tags.slice(0, 3)
+#${relevantHashtags.slice(0, 4).join(' #')}`,
+        hashtags: relevantHashtags.slice(0, 4)
       }
     ]
   }
   
-  // Default tweets for other categories
+  if (category === 'technology') {
+    return [
+      {
+        content: `💻 Just watched: "${title.length > 80 ? title.substring(0, 77) + '...' : title}"
+
+Mind-blowing tech insights! 
+
+Key takeaway: ${keyTopics[0] || 'Technical excellence'}
+
+#${relevantHashtags.slice(0, 3).join(' #')}`,
+        hashtags: relevantHashtags.slice(0, 3)
+      },
+      {
+        content: `🚀 Best ${category} insight:
+
+${summary.split('.')[0]}.
+
+Simple but powerful. Sometimes the most effective solutions are the most elegant ones.
+
+#${relevantHashtags.slice(0, 2).join(' #')}`,
+        hashtags: relevantHashtags.slice(0, 2)
+      },
+      {
+        content: `⚡ New tech content!
+
+Covers: ${keyTopics.slice(0, 2).join(' & ')}
+
+The practical approach makes complex concepts actually implementable.
+
+#${relevantHashtags.slice(0, 4).join(' #')}`,
+        hashtags: relevantHashtags.slice(0, 4)
+      }
+    ]
+  }
+  
+  // Enhanced default tweets for other categories
   return [
     {
-      content: `🎯 Just discovered: "${title.length > 60 ? title.substring(0, 57) + '...' : title}"
+      content: `🎯 Just discovered: "${title.length > 80 ? title.substring(0, 77) + '...' : title}"
 
 Mind-blowing insights on ${category}! 
 
-Key takeaway: ${keyTopics[0]}
+Key takeaway: ${keyTopics[0] || 'Valuable insights'}
 
-#${tags.slice(0, 2).join(' #')}`,
-      hashtags: tags.slice(0, 2)
+#${relevantHashtags.slice(0, 3).join(' #')}`,
+      hashtags: relevantHashtags.slice(0, 3)
     },
     {
       content: `💡 Best ${category} insight:
 
-"${analysis.summary.split('.')[0]}."
+${summary.split('.')[0]}.
 
 Simple but powerful. Sometimes the most effective strategies are the most straightforward ones.
 
-#${tags[0]} #${category}`,
-      hashtags: [tags[0], category]
+#${relevantHashtags.slice(0, 2).join(' #')}`,
+      hashtags: relevantHashtags.slice(0, 2)
     },
     {
-      content: `🚀 New content on ${category}!
+      content: `🚀 New ${category} content!
 
 Covers: ${keyTopics.slice(0, 2).join(' & ')}
 
 The practical approach makes it so much easier to implement these strategies.
 
-#${tags.slice(0, 3).join(' #')}`,
-      hashtags: tags.slice(0, 3)
+#${relevantHashtags.slice(0, 4).join(' #')}`,
+      hashtags: relevantHashtags.slice(0, 4)
     }
   ]
 }
 
+// Generate relevant hashtags based on content analysis
+const generateRelevantHashtags = (tags: string[], category: string): string[] => {
+  const baseHashtags = [...tags, category]
+  const additionalHashtags: string[] = []
+  
+  // Add category-specific hashtags
+  switch (category) {
+    case 'music':
+      additionalHashtags.push('musiclover', 'newmusic', 'artist', 'songwriter', 'musicreview')
+      break
+    case 'technology':
+      additionalHashtags.push('tech', 'coding', 'developer', 'programming', 'innovation', 'techreview')
+      break
+    case 'business':
+      additionalHashtags.push('entrepreneur', 'startup', 'businesstips', 'success', 'leadership')
+      break
+    case 'fitness':
+      additionalHashtags.push('health', 'wellness', 'workout', 'fitnessmotivation', 'healthylifestyle')
+      break
+    case 'education':
+      additionalHashtags.push('learning', 'education', 'knowledge', 'skills', 'growth')
+      break
+    case 'travel':
+      additionalHashtags.push('adventure', 'explore', 'wanderlust', 'travelgram', 'journey')
+      break
+    case 'gaming':
+      additionalHashtags.push('gamer', 'gaming', 'gameplay', 'videogames', 'esports')
+      break
+    case 'cooking':
+      additionalHashtags.push('foodie', 'recipe', 'cooking', 'chef', 'delicious')
+      break
+    default:
+      additionalHashtags.push('content', 'insights', 'tips', 'guide', 'helpful')
+  }
+  
+  // Combine and deduplicate
+  const allHashtags = [...baseHashtags, ...additionalHashtags]
+  const uniqueHashtags = Array.from(new Set(allHashtags))
+  return uniqueHashtags.filter(tag => tag && tag.length > 0)
+}
+
 const generateQuotes = (analysis: VideoAnalysis) => {
-  const { category, keyTopics } = analysis
+  const { category, keyTopics, title, channelTitle } = analysis
   
   if (category === 'music') {
     const musicQuotes = [
@@ -506,7 +1006,9 @@ const generateQuotes = (analysis: VideoAnalysis) => {
       'Where words fail, music speaks',
       'Good music doesn\'t have an expiration date',
       'Music is the soundtrack to our lives',
-      'Every song tells a story'
+      'Every song tells a story',
+      `"${title}" - ${channelTitle || 'Artist'}`,
+      'Great music connects hearts across all boundaries'
     ]
     
     return musicQuotes.map(quote => ({
@@ -515,15 +1017,52 @@ const generateQuotes = (analysis: VideoAnalysis) => {
     }))
   }
   
-  // Default quotes for other categories
-  const quotes = [
-    `Success in ${category} comes from consistent daily action`,
-    `Master the fundamentals of ${category} first`,
-    `${keyTopics[0]} is the foundation of success`,
-    `Great ${category} results require great ${category} habits`
+  if (category === 'technology') {
+    const techQuotes = [
+      'Code is poetry written in logic',
+      'The best code is no code at all',
+      'Technology is best when it brings people together',
+      'Innovation distinguishes between a leader and a follower',
+      `${keyTopics[0] || 'Technical excellence'} drives innovation`,
+      'Great developers write code that humans can understand',
+      'The future belongs to those who learn continuously'
+    ]
+    
+    return techQuotes.map(quote => ({
+      text: quote,
+      category: category
+    }))
+  }
+  
+  if (category === 'business') {
+    const businessQuotes = [
+      'Success is where preparation meets opportunity',
+      'The best time to plant a tree was 20 years ago. The second best time is now',
+      'Innovation is the currency of the future',
+      'Great businesses solve real problems',
+      `${keyTopics[0] || 'Strategic thinking'} separates leaders from followers`,
+      'Execution is everything in business',
+      'Customer success is business success'
+    ]
+    
+    return businessQuotes.map(quote => ({
+      text: quote,
+      category: category
+    }))
+  }
+  
+  // Enhanced default quotes for other categories
+  const categoryQuotes = [
+    `Excellence in ${category} comes from consistent daily practice`,
+    `Master the fundamentals of ${category} before advancing`,
+    `${keyTopics[0] || 'Knowledge'} is the foundation of success`,
+    `Great ${category} results require great ${category} habits`,
+    `The journey of ${category} mastery begins with a single step`,
+    `Quality over quantity in ${category} always wins`,
+    `Continuous learning is the key to ${category} success`
   ]
   
-  return quotes.map(quote => ({
+  return categoryQuotes.map(quote => ({
     text: quote,
     category: category
   }))
