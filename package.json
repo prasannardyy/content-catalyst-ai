@@ -12,6 +12,11 @@
     "start": "cd frontend && npm start",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && pip install -r requirements.txt"
   },
+  "dependencies": {
+    "next": "14.0.3",
+    "react": "^18",
+    "react-dom": "^18"
+  },
   "devDependencies": {
     "concurrently": "^8.2.2"
   }
