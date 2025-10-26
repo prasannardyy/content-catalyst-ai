@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-// Removed Supabase import - using demo mode only
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
 import { Zap, Mail, Lock, Eye, EyeOff, User } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -43,20 +44,59 @@ export default function SignUpPage() {
       return
     }
 
-    // Demo mode - simulate signup
-    setTimeout(() => {
-      toast.success('Account created! (Demo Mode)')
-      router.push('/auth/login')
+    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    
+    if (isDemoMode || !hasFirebaseConfig || !auth) {
+      // Demo mode - simulate signup
+      setTimeout(() => {
+        toast.success('Account created! (Demo Mode)')
+        router.push('/auth/login')
+        setLoading(false)
+      }, 1000)
+      return
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password)
+      
+      // Update the user's display name
+      await updateProfile(userCredential.user, {
+        displayName: formData.fullName
+      })
+
+      toast.success('Account created successfully!')
+      router.push('/dashboard')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create account')
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
   }
 
   const handleGoogleSignUp = async () => {
-    // Demo mode - simulate Google signup
-    toast.success('Google signup simulated! (Demo Mode)')
-    setTimeout(() => {
+    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    
+    if (isDemoMode || !hasFirebaseConfig || !auth) {
+      // Demo mode - simulate Google signup
+      toast.success('Google signup simulated! (Demo Mode)')
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 1000)
+      return
+    }
+
+    try {
+      const provider = new GoogleAuthProvider()
+      await signInWithPopup(auth, provider)
+      toast.success('Account created successfully!')
       router.push('/dashboard')
-    }, 1000)
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to sign up with Google')
+    }
   }
 
   return (

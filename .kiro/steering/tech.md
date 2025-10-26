@@ -7,15 +7,15 @@
 - **Styling**: Tailwind CSS utility-first framework
 - **UI Components**: Headless UI, Lucide React icons
 - **State Management**: React Context API
-- **Authentication**: Demo mode authentication (no external dependencies)
+- **Authentication**: Firebase Authentication with demo mode fallback
 - **HTTP Client**: Axios for API communication
 - **Notifications**: React Hot Toast
 - **Markdown**: React Markdown with syntax highlighting
 
 ## Backend Integration
 
-- **Database**: Demo mode with mock data (no external database)
-- **Authentication**: Demo mode authentication only
+- **Database**: Firebase Firestore with demo mode fallback
+- **Authentication**: Firebase Auth (Email/Password, Google OAuth)
 - **API**: RESTful API communication
 - **Demo Mode**: Built-in mock data system for development/testing
 
@@ -41,7 +41,8 @@ npm audit            # Check for security vulnerabilities
 
 ## Environment Configuration
 
-- **Demo Mode**: Always enabled (no external APIs required)
+- **Demo Mode**: `NEXT_PUBLIC_DEMO_MODE=true` for development without Firebase
+- **Firebase**: Complete configuration for authentication and database
 - **API URL**: Backend service endpoint
 
 ## Deployment

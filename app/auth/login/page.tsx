@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-// Removed Supabase import - using demo mode only
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
 import { Zap, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -18,20 +19,53 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
 
-    // Demo mode - simulate login
-    setTimeout(() => {
-      toast.success('Welcome back! (Demo Mode)')
+    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    
+    if (isDemoMode || !hasFirebaseConfig || !auth) {
+      // Demo mode - simulate login
+      setTimeout(() => {
+        toast.success('Welcome back! (Demo Mode)')
+        router.push('/dashboard')
+        setLoading(false)
+      }, 1000)
+      return
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password)
+      toast.success('Welcome back!')
       router.push('/dashboard')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to sign in')
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
   }
 
   const handleGoogleLogin = async () => {
-    // Demo mode - simulate Google login
-    toast.success('Google login simulated! (Demo Mode)')
-    setTimeout(() => {
+    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    
+    if (isDemoMode || !hasFirebaseConfig || !auth) {
+      // Demo mode - simulate Google login
+      toast.success('Google login simulated! (Demo Mode)')
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 1000)
+      return
+    }
+
+    try {
+      const provider = new GoogleAuthProvider()
+      await signInWithPopup(auth, provider)
+      toast.success('Welcome!')
       router.push('/dashboard')
-    }, 1000)
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to sign in with Google')
+    }
   }
 
   return (

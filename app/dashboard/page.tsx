@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Plus, Video, Clock, CheckCircle, XCircle, ExternalLink, Zap, LogOut } from 'lucide-react'
 import toast from 'react-hot-toast'
 import axios from 'axios'
-// Removed Supabase import - using demo mode only
+import { auth } from '@/lib/firebase'
 
 interface Project {
   id: string
@@ -43,22 +43,45 @@ export default function DashboardPage() {
 
   const fetchProjects = async () => {
     try {
-      // Demo mode - use mock projects
-      const mockProjects = [
-        {
-          id: 'demo_project_1',
-          original_video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          status: 'completed' as const,
-          title: 'Sample Video: Getting Started with AI',
-          description: 'A comprehensive guide to AI fundamentals',
-          duration: 300,
-          thumbnail_url: 'https://via.placeholder.com/320x180/3b82f6/ffffff?text=Demo+Video',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ]
+      const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+      const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+                                process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
       
-      setProjects(mockProjects)
+      if (isDemoMode || !hasFirebaseConfig || !auth) {
+        // Demo mode - use mock projects
+        const mockProjects = [
+          {
+            id: 'demo_project_1',
+            original_video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            status: 'completed' as const,
+            title: 'Sample Video: Getting Started with AI',
+            description: 'A comprehensive guide to AI fundamentals',
+            duration: 300,
+            thumbnail_url: 'https://via.placeholder.com/320x180/3b82f6/ffffff?text=Demo+Video',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ]
+        
+        setProjects(mockProjects)
+      } else {
+        // Firebase mode - get user token and fetch real projects
+        const user = auth.currentUser
+        if (user) {
+          const idToken = await user.getIdToken()
+          
+          const response = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/projects`,
+            {
+              headers: {
+                Authorization: `Bearer ${idToken}`
+              }
+            }
+          )
+          
+          setProjects(response.data)
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch projects:', error)
       toast.error('Failed to load projects')
@@ -72,39 +95,88 @@ export default function DashboardPage() {
     setCreating(true)
 
     try {
-      // Demo mode - simulate project creation
-      const newProject = {
-        id: `demo_project_${Date.now()}`,
-        original_video_url: newVideoUrl,
-        status: 'processing' as const,
-        title: 'Processing new video...',
-        description: 'AI is analyzing your content',
-        duration: undefined,
-        thumbnail_url: 'https://via.placeholder.com/320x180/6b7280/ffffff?text=Processing...',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+      const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+      const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+                                process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      
+      if (isDemoMode || !hasFirebaseConfig || !auth) {
+        // Demo mode - simulate project creation
+        const newProject = {
+          id: `demo_project_${Date.now()}`,
+          original_video_url: newVideoUrl,
+          status: 'processing' as const,
+          title: 'Processing new video...',
+          description: 'AI is analyzing your content',
+          duration: undefined,
+          thumbnail_url: 'https://via.placeholder.com/320x180/6b7280/ffffff?text=Processing...',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
 
-      toast.success('Project created! (Demo Mode)')
-      setShowNewProjectModal(false)
-      setNewVideoUrl('')
-      
-      // Add new project to the list
-      setProjects([newProject, ...projects])
-      
-      // Simulate processing completion after 3 seconds
-      setTimeout(() => {
-        setProjects(prev => prev.map(p => 
-          p.id === newProject.id 
-            ? { ...p, status: 'completed' as const, title: 'Demo Video: ' + newVideoUrl.split('v=')[1]?.substring(0, 10) || 'New Video' }
-            : p
-        ))
-        toast.success('Demo project processing completed!')
-      }, 3000)
-      
+        toast.success('Project created! (Demo Mode)')
+        setShowNewProjectModal(false)
+        setNewVideoUrl('')
+        
+        // Add new project to the list
+        setProjects([newProject, ...projects])
+        
+        // Simulate processing completion after 3 seconds
+        setTimeout(() => {
+          setProjects(prev => prev.map(p => 
+            p.id === newProject.id 
+              ? { ...p, status: 'completed' as const, title: 'Demo Video: ' + newVideoUrl.split('v=')[1]?.substring(0, 10) || 'New Video' }
+              : p
+          ))
+          toast.success('Demo project processing completed!')
+        }, 3000)
+      } else {
+        // Firebase mode - create real project
+        const user = auth.currentUser
+        if (user) {
+          const idToken = await user.getIdToken()
+          
+          const response = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL}/projects`,
+            {
+              youtube_url: newVideoUrl
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          )
+
+          toast.success('Project created! AI processing has started.')
+          setShowNewProjectModal(false)
+          setNewVideoUrl('')
+          
+          // Add new project to the list
+          setProjects([response.data, ...projects])
+          
+          // Refresh projects to get updated status
+          setTimeout(() => {
+            fetchProjects()
+          }, 2000)
+        }
+      }
     } catch (error: any) {
       console.error('Failed to create project:', error)
-      toast.error('Failed to create project')
+      
+      let errorMessage = 'Failed to create project'
+      
+      if (error.response?.data?.detail) {
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail.map((err: any) => err.msg).join(', ')
+        } else if (typeof error.response.data.detail === 'string') {
+          errorMessage = error.response.data.detail
+        }
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      toast.error(errorMessage)
     } finally {
       setCreating(false)
     }
