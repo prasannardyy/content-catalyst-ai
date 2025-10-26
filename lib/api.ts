@@ -242,115 +242,43 @@ Best AI applications:
   }
 ]
 
+import { getVideoId, getVideoMetadata, generateVideoBasedContent, VideoAnalysis } from './youtube-analyzer'
+import { generateQuoteImages, generateThumbnailImages } from './image-generator'
+
 // Function to generate content based on YouTube URL
-const generateContentForVideo = (youtubeUrl: string, projectId: string) => {
-  const getVideoId = (url: string) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)
-    return match ? match[1] : 'unknown'
-  }
-  
+const generateContentForVideo = async (youtubeUrl: string, projectId: string) => {
   const videoId = getVideoId(youtubeUrl)
   
-  // Analyze the URL to determine content type and generate relevant content
-  const analyzeVideoContent = (url: string) => {
-    const urlLower = url.toLowerCase()
-    
-    // Extract potential keywords from URL parameters or common patterns
-    let detectedTopic = 'general'
-    let title = 'Your Video Content'
-    let hashtags = ['Video', 'Content', 'YouTube']
-    let quoteText = 'Great content creates great conversations'
-    
-    // Business/Entrepreneurship keywords
-    if (urlLower.includes('business') || urlLower.includes('entrepreneur') || urlLower.includes('startup') || 
-        urlLower.includes('marketing') || urlLower.includes('sales') || urlLower.includes('money') ||
-        urlLower.includes('profit') || urlLower.includes('revenue')) {
-      detectedTopic = 'business'
-      title = 'Business & Entrepreneurship Insights'
-      hashtags = ['Business', 'Entrepreneurship', 'Marketing', 'Success', 'Growth']
-      quoteText = 'Success in business comes from serving others'
-    }
-    
-    // Technology/Programming keywords
-    else if (urlLower.includes('tech') || urlLower.includes('code') || urlLower.includes('programming') ||
-             urlLower.includes('software') || urlLower.includes('ai') || urlLower.includes('javascript') ||
-             urlLower.includes('python') || urlLower.includes('react') || urlLower.includes('tutorial')) {
-      detectedTopic = 'technology'
-      title = 'Technology & Programming Guide'
-      hashtags = ['Technology', 'Programming', 'Coding', 'Tech', 'Development']
-      quoteText = 'Code is poetry written for machines'
-    }
-    
-    // Fitness/Health keywords
-    else if (urlLower.includes('fitness') || urlLower.includes('workout') || urlLower.includes('health') ||
-             urlLower.includes('diet') || urlLower.includes('exercise') || urlLower.includes('nutrition') ||
-             urlLower.includes('weight') || urlLower.includes('muscle')) {
-      detectedTopic = 'fitness'
-      title = 'Health & Fitness Journey'
-      hashtags = ['Fitness', 'Health', 'Workout', 'Nutrition', 'Wellness']
-      quoteText = 'Your body is your temple, treat it well'
-    }
-    
-    // Education/Learning keywords
-    else if (urlLower.includes('learn') || urlLower.includes('education') || urlLower.includes('study') ||
-             urlLower.includes('course') || urlLower.includes('lesson') || urlLower.includes('tutorial') ||
-             urlLower.includes('guide') || urlLower.includes('how') || urlLower.includes('tips')) {
-      detectedTopic = 'education'
-      title = 'Learning & Educational Content'
-      hashtags = ['Education', 'Learning', 'Knowledge', 'Skills', 'Growth']
-      quoteText = 'Learning never stops, growing never ends'
-    }
-    
-    // Lifestyle/Personal Development keywords
-    else if (urlLower.includes('lifestyle') || urlLower.includes('motivation') || urlLower.includes('inspiration') ||
-             urlLower.includes('mindset') || urlLower.includes('productivity') || urlLower.includes('habits') ||
-             urlLower.includes('success') || urlLower.includes('goals')) {
-      detectedTopic = 'lifestyle'
-      title = 'Personal Development & Lifestyle'
-      hashtags = ['Lifestyle', 'Motivation', 'PersonalDevelopment', 'Mindset', 'Success']
-      quoteText = 'Your mindset determines your reality'
-    }
-    
-    // Travel/Adventure keywords
-    else if (urlLower.includes('travel') || urlLower.includes('adventure') || urlLower.includes('explore') ||
-             urlLower.includes('journey') || urlLower.includes('destination') || urlLower.includes('trip')) {
-      detectedTopic = 'travel'
-      title = 'Travel & Adventure Experience'
-      hashtags = ['Travel', 'Adventure', 'Explore', 'Journey', 'Experience']
-      quoteText = 'Adventure awaits those who seek it'
-    }
-    
-    // Food/Cooking keywords
-    else if (urlLower.includes('food') || urlLower.includes('cooking') || urlLower.includes('recipe') ||
-             urlLower.includes('kitchen') || urlLower.includes('chef') || urlLower.includes('meal')) {
-      detectedTopic = 'food'
-      title = 'Culinary Adventures & Recipes'
-      hashtags = ['Food', 'Cooking', 'Recipe', 'Culinary', 'Kitchen']
-      quoteText = 'Good food brings people together'
-    }
-    
-    // Gaming keywords
-    else if (urlLower.includes('game') || urlLower.includes('gaming') || urlLower.includes('play') ||
-             urlLower.includes('stream') || urlLower.includes('esports')) {
-      detectedTopic = 'gaming'
-      title = 'Gaming Content & Entertainment'
-      hashtags = ['Gaming', 'Games', 'Entertainment', 'Fun', 'Play']
-      quoteText = 'Gaming is not just play, it\'s an art form'
-    }
-    
-    // Music keywords
-    else if (urlLower.includes('music') || urlLower.includes('song') || urlLower.includes('audio') ||
-             urlLower.includes('sound') || urlLower.includes('beat') || urlLower.includes('melody')) {
-      detectedTopic = 'music'
-      title = 'Musical Journey & Sound'
-      hashtags = ['Music', 'Audio', 'Sound', 'Melody', 'Art']
-      quoteText = 'Music is the universal language of emotion'
-    }
-    
-    return { detectedTopic, title, hashtags, quoteText }
+  if (!videoId) {
+    throw new Error('Invalid YouTube URL')
   }
+
+  // Get video metadata and analysis
+  const videoData = await getVideoMetadata(videoId)
   
-  const analysis = analyzeVideoContent(youtubeUrl)
+  // Create complete video analysis object
+  const analysis: VideoAnalysis = {
+    videoId,
+    title: videoData.title || 'Video Analysis',
+    description: videoData.description || 'Analyzing video content...',
+    channelTitle: videoData.channelTitle || 'Content Creator',
+    duration: videoData.duration || '10:00',
+    viewCount: videoData.viewCount || '1000',
+    publishedAt: videoData.publishedAt || new Date().toISOString(),
+    tags: videoData.tags || ['video', 'content'],
+    category: videoData.category || 'general',
+    thumbnail: videoData.thumbnail || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+    keyTopics: videoData.keyTopics || ['Key Insights', 'Main Points', 'Takeaways'],
+    summary: videoData.summary || 'This video provides valuable insights and practical advice.'
+  }
+
+  // Generate content based on video analysis
+  const generatedContent = generateVideoBasedContent(analysis)
+  
+  // Generate quote images
+  const quoteImages = await generateQuoteImages(generatedContent.quotes, videoId)
+  const thumbnailImages = await generateThumbnailImages(analysis.title, analysis.category, videoId)
+  
   const shortUrl = youtubeUrl.length > 50 ? youtubeUrl.substring(0, 47) + '...' : youtubeUrl
   
   // Generate comprehensive content assets
@@ -360,179 +288,51 @@ const generateContentForVideo = (youtubeUrl: string, projectId: string) => {
       id: `asset_blog_${projectId}`,
       project_id: projectId,
       asset_type: 'blog',
-      content: `# ${analysis.title}: Key Insights from Your Video
-
-## Introduction
-
-I just finished watching your video and wanted to share the key insights and takeaways that stood out to me. This content breakdown will help you repurpose your video into multiple formats and reach a wider audience.
-
-## Video Analysis Summary
-
-Your video covers important aspects of ${analysis.detectedTopic} that many people are looking to understand better. The content is well-structured and provides valuable information that can be repurposed across different platforms.
-
-## Key Insights from Your Video
-
-### Main Takeaway #1: Core Message
-The central theme of your video focuses on delivering practical value to your audience. This approach resonates well because it provides actionable insights that viewers can implement immediately.
-
-### Main Takeaway #2: Audience Engagement
-Your presentation style and content structure show a clear understanding of your target audience's needs and interests. This is crucial for building a loyal following.
-
-### Main Takeaway #3: Value Delivery
-The way you present information demonstrates expertise while remaining accessible to viewers at different knowledge levels.
-
-## Content Repurposing Opportunities
-
-Based on your video, here are several ways to extend its reach:
-
-### Blog Content
-- Expand on the main points with additional examples
-- Create step-by-step guides based on your recommendations
-- Write follow-up posts addressing common questions
-
-### Social Media
-- Extract key quotes for Instagram posts
-- Create Twitter threads summarizing main points
-- Share behind-the-scenes insights on LinkedIn
-
-### Visual Content
-- Design quote graphics with your best insights
-- Create infographics summarizing key points
-- Develop carousel posts for Instagram and LinkedIn
-
-## Recommended Next Steps
-
-1. **Watch the original video**: ${youtubeUrl}
-2. **Identify your favorite insights** and share them with your network
-3. **Engage with the content** by leaving thoughtful comments
-4. **Subscribe for more valuable content** like this
-
-## Conclusion
-
-Your video provides excellent value and demonstrates clear expertise in ${analysis.detectedTopic}. The insights shared can help many people improve their understanding and achieve better results.
-
-Keep creating valuable content like this - your audience clearly benefits from your knowledge and experience.
-
----
-
-*This analysis was generated based on: ${youtubeUrl}*
-
-**What was your biggest takeaway from this video? Share your thoughts below!**`,
+      content: generatedContent.blogPost,
       metadata: {
-        word_count: 380,
-        reading_time: '3 min read',
+        word_count: generatedContent.blogPost.split(' ').length,
+        reading_time: `${Math.ceil(generatedContent.blogPost.split(' ').length / 200)} min read`,
         source_video: youtubeUrl,
         topic: analysis.title,
-        detected_category: analysis.detectedTopic
+        detected_category: analysis.category,
+        key_topics: analysis.keyTopics
       },
       created_at: new Date().toISOString()
     },
     
     // LinkedIn Posts
-    {
-      id: `asset_linkedin_${projectId}_1`,
+    ...generatedContent.linkedinPosts.map((post, index) => ({
+      id: `asset_linkedin_${projectId}_${index + 1}`,
       project_id: projectId,
-      asset_type: 'linkedin_post',
-      content: `🎥 Just shared some valuable insights about ${analysis.detectedTopic}!
-
-This video covers key aspects that many professionals in our field are looking to understand better.
-
-Key highlights:
-✅ Practical, actionable advice you can implement today
-✅ Real-world examples and case studies
-✅ Step-by-step guidance for better results
-✅ Common mistakes to avoid
-
-The response has been incredible, and I wanted to share these insights with my LinkedIn network too.
-
-What's your experience with ${analysis.detectedTopic}? I'd love to hear your thoughts and experiences in the comments! 👇
-
-Watch the full breakdown: ${youtubeUrl}
-
-#${analysis.hashtags.join(' #')}`,
+      asset_type: 'linkedin_post' as const,
+      content: post.content,
       metadata: {
-        character_count: 520,
-        hashtags: analysis.hashtags,
+        character_count: post.content.length,
+        hashtags: post.hashtags,
         source_video: youtubeUrl,
         topic: analysis.title,
-        detected_category: analysis.detectedTopic
+        detected_category: analysis.category,
+        key_topics: analysis.keyTopics
       },
       created_at: new Date().toISOString()
-    },
-    {
-      id: `asset_linkedin_${projectId}_2`,
-      project_id: projectId,
-      asset_type: 'linkedin_post',
-      content: `💡 Key insight from my latest video on ${analysis.detectedTopic}:
-
-"${analysis.quoteText}"
-
-This resonates with so many people because it captures the essence of what really matters in this field.
-
-In the full video, I dive deeper into:
-🔍 Why this principle is so important
-📊 Real examples of how it works in practice
-🚀 How you can apply it to your own situation
-⚠️ Common pitfalls to avoid
-
-What's your take on this? Do you agree or have a different perspective?
-
-Full video: ${shortUrl}
-
-#${analysis.hashtags.join(' #')}`,
-      metadata: {
-        character_count: 480,
-        hashtags: analysis.hashtags,
-        source_video: youtubeUrl,
-        topic: analysis.title,
-        detected_category: analysis.detectedTopic
-      },
-      created_at: new Date().toISOString()
-    },
+    })),
     
     // Tweets
-    {
-      id: `asset_tweet_${projectId}_1`,
+    ...generatedContent.tweets.map((tweet, index) => ({
+      id: `asset_tweet_${projectId}_${index + 1}`,
       project_id: projectId,
-      asset_type: 'tweet',
-      content: `🎥 New video about ${analysis.detectedTopic} is live!\n\nPacked with practical insights you can use right away.\n\nWatch: ${shortUrl}\n\n#${analysis.hashtags.slice(0, 3).join(' #')}`,
+      asset_type: 'tweet' as const,
+      content: tweet.content,
       metadata: {
-        character_count: 150,
-        hashtags: analysis.hashtags.slice(0, 3),
+        character_count: tweet.content.length,
+        hashtags: tweet.hashtags,
         source_video: youtubeUrl,
         topic: analysis.title,
-        detected_category: analysis.detectedTopic
+        detected_category: analysis.category,
+        key_topics: analysis.keyTopics
       },
       created_at: new Date().toISOString()
-    },
-    {
-      id: `asset_tweet_${projectId}_2`,
-      project_id: projectId,
-      asset_type: 'tweet',
-      content: `💡 Key insight from my latest ${analysis.detectedTopic} video:\n\n"${analysis.quoteText}"\n\nFull breakdown: ${shortUrl}\n\n#${analysis.hashtags.slice(0, 2).join(' #')}`,
-      metadata: {
-        character_count: 140,
-        hashtags: analysis.hashtags.slice(0, 2),
-        source_video: youtubeUrl,
-        topic: analysis.title,
-        detected_category: analysis.detectedTopic
-      },
-      created_at: new Date().toISOString()
-    },
-    {
-      id: `asset_tweet_${projectId}_3`,
-      project_id: projectId,
-      asset_type: 'tweet',
-      content: `🚀 Just shared my thoughts on ${analysis.detectedTopic}\n\nThis video covers everything you need to know to get started.\n\nCheck it out: ${shortUrl}\n\n#${analysis.hashtags[0]} #Video`,
-      metadata: {
-        character_count: 160,
-        hashtags: [analysis.hashtags[0], 'Video'],
-        source_video: youtubeUrl,
-        topic: analysis.title,
-        detected_category: analysis.detectedTopic
-      },
-      created_at: new Date().toISOString()
-    },
+    })),
     
     // Video Clips
     {
@@ -582,54 +382,43 @@ Full video: ${shortUrl}
     },
     
     // Quote Graphics/Images
-    {
-      id: `asset_image_${projectId}_1`,
+    ...quoteImages.map((image, index) => ({
+      id: `asset_image_${projectId}_${index + 1}`,
       project_id: projectId,
-      asset_type: 'image',
-      file_url: `https://via.placeholder.com/1080x1080/3b82f6/ffffff?text=${encodeURIComponent(analysis.quoteText)}`,
+      asset_type: 'image' as const,
+      file_url: image.url,
       metadata: {
-        quote_text: analysis.quoteText,
+        quote_text: image.quote,
         dimensions: '1080x1080',
         format: 'PNG',
-        background_color: '#3b82f6',
-        text_color: '#ffffff',
+        background_color: image.background,
+        text_color: image.textColor,
         source_video: youtubeUrl,
-        topic: analysis.detectedTopic
+        topic: analysis.category,
+        video_title: analysis.title
       },
       created_at: new Date().toISOString()
-    },
-    {
-      id: `asset_image_${projectId}_2`,
+    })),
+    
+    // Thumbnail Images
+    ...thumbnailImages.map((image, index) => ({
+      id: `asset_thumbnail_${projectId}_${index + 1}`,
       project_id: projectId,
-      asset_type: 'image',
-      file_url: `https://via.placeholder.com/1080x1080/10b981/ffffff?text=${encodeURIComponent(`New ${analysis.detectedTopic} Video`)}`,
+      asset_type: 'image' as const,
+      file_url: image.url,
       metadata: {
-        quote_text: `New ${analysis.detectedTopic} Video`,
-        dimensions: '1080x1080',
+        quote_text: image.quote,
+        dimensions: '1280x720',
         format: 'PNG',
-        background_color: '#10b981',
-        text_color: '#ffffff',
+        background_color: image.background,
+        text_color: image.textColor,
         source_video: youtubeUrl,
-        topic: analysis.detectedTopic
+        topic: analysis.category,
+        video_title: analysis.title,
+        type: 'thumbnail'
       },
       created_at: new Date().toISOString()
-    },
-    {
-      id: `asset_image_${projectId}_3`,
-      project_id: projectId,
-      asset_type: 'image',
-      file_url: `https://via.placeholder.com/1080x1080/f59e0b/ffffff?text=${encodeURIComponent(`${analysis.title} - Watch Now`)}`,
-      metadata: {
-        quote_text: `${analysis.title} - Watch Now`,
-        dimensions: '1080x1080',
-        format: 'PNG',
-        background_color: '#f59e0b',
-        text_color: '#ffffff',
-        source_video: youtubeUrl,
-        topic: analysis.detectedTopic
-      },
-      created_at: new Date().toISOString()
-    }
+    }))
   ]
   
   return assets
@@ -668,35 +457,59 @@ const storeProject = (project: Project) => {
   localStorage.setItem('user_projects', JSON.stringify(storedProjects))
 }
 
-// Helper function to complete project processing
-const completeProject = (projectId: string, youtubeUrl: string) => {
-  setTimeout(() => {
-    const getVideoId = (url: string) => {
-      const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)
-      return match ? match[1] : 'unknown'
-    }
-    
-    const videoId = getVideoId(youtubeUrl)
-    
-    const completedProject: Project = {
-      id: projectId,
-      user_id: auth?.currentUser?.uid || 'demo_user',
-      original_video_url: youtubeUrl,
-      title: `Content from Your Video`,
-      description: 'AI-generated content based on your YouTube video',
-      status: 'completed',
-      duration: Math.floor(Math.random() * 600) + 120, // Random duration between 2-12 minutes
-      thumbnail_url: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-      assets: generateContentForVideo(youtubeUrl, projectId),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-    
-    storeProject(completedProject)
-    
-    // Trigger a custom event to notify the UI (only in browser)
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('projectCompleted', { detail: { projectId } }))
+// Helper function to complete project processing with real content
+const completeProjectWithRealContent = async (projectId: string, youtubeUrl: string) => {
+  setTimeout(async () => {
+    try {
+      const videoId = getVideoId(youtubeUrl)
+      const assets = await generateContentForVideo(youtubeUrl, projectId)
+      
+      // Get video metadata for title and description
+      const videoData = await getVideoMetadata(videoId)
+      
+      const completedProject: Project = {
+        id: projectId,
+        user_id: auth?.currentUser?.uid || 'demo_user',
+        original_video_url: youtubeUrl,
+        title: videoData.title || `Content from Your Video`,
+        description: videoData.summary || 'AI-generated content based on your YouTube video',
+        status: 'completed',
+        duration: Math.floor(Math.random() * 600) + 120, // Random duration between 2-12 minutes
+        thumbnail_url: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+        assets: assets,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      storeProject(completedProject)
+      
+      // Trigger a custom event to notify the UI (only in browser)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('projectCompleted', { detail: { projectId } }))
+      }
+    } catch (error) {
+      console.error('Error completing project:', error)
+      // Fallback to basic completion if content generation fails
+      const videoId = getVideoId(youtubeUrl)
+      const completedProject: Project = {
+        id: projectId,
+        user_id: auth?.currentUser?.uid || 'demo_user',
+        original_video_url: youtubeUrl,
+        title: `Content Analysis Complete`,
+        description: 'Basic content analysis completed',
+        status: 'completed',
+        duration: 300,
+        thumbnail_url: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+        assets: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      storeProject(completedProject)
+      
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('projectCompleted', { detail: { projectId } }))
+      }
     }
   }, 3000) // Complete after 3 seconds
 }
@@ -772,13 +585,12 @@ export const projectsApi = {
 
   // Create a new project
   createProject: async (youtubeUrl: string): Promise<Project> => {
-    // Extract video ID from YouTube URL for more realistic simulation
-    const getVideoId = (url: string) => {
-      const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)
-      return match ? match[1] : 'unknown'
+    const videoId = getVideoId(youtubeUrl)
+    
+    if (!videoId) {
+      throw new Error('Invalid YouTube URL')
     }
     
-    const videoId = getVideoId(youtubeUrl)
     const projectId = `project_${Date.now()}`
     
     // Create a more realistic project based on the URL
@@ -799,8 +611,8 @@ export const projectsApi = {
     // Store the processing project
     storeProject(newProject)
     
-    // Start the completion process
-    completeProject(projectId, youtubeUrl)
+    // Start the completion process with real content generation
+    completeProjectWithRealContent(projectId, youtubeUrl)
     
     return newProject
     
