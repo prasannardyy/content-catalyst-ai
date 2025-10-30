@@ -19,17 +19,9 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
 
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
-      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-
-    if (isDemoMode || !hasFirebaseConfig || !auth) {
-      // Demo mode - simulate login
-      setTimeout(() => {
-        toast.success('Welcome back! (Demo Mode)')
-        router.push('/dashboard')
-        setLoading(false)
-      }, 1000)
+    if (!auth) {
+      toast.error('Authentication not initialized. Please check your configuration.')
+      setLoading(false)
       return
     }
 
@@ -65,16 +57,8 @@ export default function LoginPage() {
   }
 
   const handleGoogleLogin = async () => {
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
-      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-
-    if (isDemoMode || !hasFirebaseConfig || !auth) {
-      // Demo mode - simulate Google login
-      toast.success('Google login simulated! (Demo Mode)')
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1000)
+    if (!auth) {
+      toast.error('Authentication not initialized. Please check your configuration.')
       return
     }
 

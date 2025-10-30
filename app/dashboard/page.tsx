@@ -204,11 +204,6 @@ export default function DashboardPage() {
               <span className="text-2xl font-bold text-gray-900">Content Catalyst AI</span>
             </div>
             <div className="flex items-center space-x-4">
-              {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
-                <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm font-medium">
-                  Demo Mode
-                </span>
-              )}
               <span className="text-gray-600">Welcome, {user?.user_metadata?.full_name || user?.email}</span>
               <button
                 onClick={handleSignOut}

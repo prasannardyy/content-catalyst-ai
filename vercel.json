@@ -4,7 +4,6 @@
   "framework": "nextjs",
   "installCommand": "npm install",
   "env": {
-    "NEXT_PUBLIC_DEMO_MODE": "true",
     "NEXT_PUBLIC_API_URL": "http://localhost:8000",
     "NEXT_PUBLIC_FIREBASE_API_KEY": "AIzaSyDG4p5STGHfFi2M6Uedv2vEg6VWAQrcUNg",
     "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN": "contentcatalyst-1d0ea.firebaseapp.com",

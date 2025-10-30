@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'
 import { auth } from './firebase'
-import { demoUser, demoSession } from './demo-mode'
 
 interface User {
   id: string
@@ -50,22 +49,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    console.log('Auth Context - Initializing Firebase auth')
     
-    console.log('Auth Context - Demo Mode:', isDemoMode, 'Has Config:', hasFirebaseConfig, 'Auth:', !!auth)
-    
-    try {
-      if (isDemoMode || !hasFirebaseConfig || !auth) {
-        // Use demo mode
-        console.log('Using demo mode authentication')
-        setSession(demoSession as Session)
-        setUser(demoUser as User)
-        setLoading(false)
-        return
-      }
+    if (!auth) {
+      console.error('Firebase auth not initialized')
+      setUser(null)
+      setSession(null)
+      setLoading(false)
+      return
+    }
 
+    try {
       console.log('Setting up Firebase auth listener')
       // Listen for authentication state changes
       const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
@@ -122,24 +116,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   const signOut = async () => {
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    
     console.log('Signing out...')
     
+    if (!auth) {
+      console.error('Firebase auth not initialized')
+      setSession(null)
+      setUser(null)
+      return
+    }
+    
     try {
-      if (isDemoMode || !hasFirebaseConfig || !auth) {
-        // In demo mode, just clear the state
-        console.log('Demo mode sign out')
-        setSession(null)
-        setUser(null)
-      } else {
-        console.log('Firebase sign out')
-        await firebaseSignOut(auth)
-        setSession(null)
-        setUser(null)
-      }
+      console.log('Firebase sign out')
+      await firebaseSignOut(auth)
+      setSession(null)
+      setUser(null)
     } catch (error) {
       console.error('Error signing out:', error)
       // Clear state anyway

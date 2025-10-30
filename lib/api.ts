@@ -13,14 +13,7 @@ const api = axios.create({
 
 // Add auth interceptor
 api.interceptors.request.use(async (config) => {
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-  const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                            process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-  
-  if (isDemoMode || !hasFirebaseConfig || !auth) {
-    // Use demo token in demo mode
-    config.headers.Authorization = `Bearer demo_token_123`
-  } else {
+  if (auth) {
     // Get Firebase ID token
     const user = auth.currentUser
     if (user) {
@@ -36,12 +29,8 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    
-    if (error.response?.status === 401 && !isDemoMode && hasFirebaseConfig) {
-      // Redirect to login on unauthorized (only in non-demo mode with Firebase)
+    if (error.response?.status === 401) {
+      // Redirect to login on unauthorized
       window.location.href = '/auth/login'
     }
     return Promise.reject(error)

@@ -2,8 +2,7 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app'
 import { getAuth, Auth } from 'firebase/auth'
 import { getFirestore, Firestore } from 'firebase/firestore'
 
-// Check if we're in demo mode or missing Firebase config
-const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+// Check if Firebase config is available
 const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
                           process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
 
@@ -39,17 +38,12 @@ if (typeof window !== 'undefined') {
       auth = getAuth(app)
       db = getFirestore(app)
       console.log('Firebase initialized successfully')
-    } else if (isDemoMode) {
-      console.log('Running in demo mode - Firebase not initialized')
     } else {
-      console.error('Firebase configuration missing')
+      console.error('Firebase configuration missing - please check your environment variables')
     }
   } catch (error) {
     console.error('Firebase initialization failed:', error)
-    // In production, we should handle this gracefully
-    if (!isDemoMode) {
-      throw error
-    }
+    throw error
   }
 }
 

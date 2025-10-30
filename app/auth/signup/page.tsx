@@ -44,21 +44,13 @@ export default function SignUpPage() {
       return
     }
 
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    
-    if (isDemoMode || !hasFirebaseConfig || !auth) {
-      // Demo mode - simulate signup
-      setTimeout(() => {
-        toast.success('Account created! (Demo Mode)')
-        router.push('/auth/login')
-        setLoading(false)
-      }, 1000)
+    if (!auth) {
+      toast.error('Authentication not initialized. Please check your configuration.')
+      setLoading(false)
       return
     }
 
-    try {
+    try{
       console.log('Creating account for:', formData.email)
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password)
       console.log('Account created successfully')
@@ -95,16 +87,8 @@ export default function SignUpPage() {
   }
 
   const handleGoogleSignUp = async () => {
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-    const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    
-    if (isDemoMode || !hasFirebaseConfig || !auth) {
-      // Demo mode - simulate Google signup
-      toast.success('Google signup simulated! (Demo Mode)')
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1000)
+    if (!auth) {
+      toast.error('Authentication not initialized. Please check your configuration.')
       return
     }
 
