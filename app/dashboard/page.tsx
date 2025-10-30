@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Video, Clock, CheckCircle, XCircle, ExternalLink, Zap, LogOut } from 'lucide-react'
+import { Plus, Video, Clock, CheckCircle, XCircle, ExternalLink, Zap, LogOut, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { projectsApi } from '@/lib/api'
 import { auth } from '@/lib/firebase'
@@ -28,6 +28,8 @@ export default function DashboardPage() {
   const [showNewProjectModal, setShowNewProjectModal] = useState(false)
   const [newVideoUrl, setNewVideoUrl] = useState('')
   const [creating, setCreating] = useState(false)
+  const [deletingProject, setDeletingProject] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -109,6 +111,41 @@ export default function DashboardPage() {
     } catch (error) {
       toast.error('Failed to sign out')
     }
+  }
+
+  const handleDeleteProject = async (projectId: string) => {
+    setDeletingProject(projectId)
+    
+    try {
+      // For demo/local mode, delete from localStorage
+      if (typeof window !== 'undefined') {
+        const storedProjects = JSON.parse(localStorage.getItem('user_projects') || '[]')
+        const updatedProjects = storedProjects.filter((p: Project) => p.id !== projectId)
+        localStorage.setItem('user_projects', JSON.stringify(updatedProjects))
+      }
+      
+      // Update local state
+      setProjects(projects.filter(p => p.id !== projectId))
+      
+      toast.success('Project deleted successfully')
+      setShowDeleteConfirm(null)
+      
+      // TODO: When backend is ready, call API to delete from database
+      // await projectsApi.deleteProject(projectId)
+    } catch (error) {
+      console.error('Failed to delete project:', error)
+      toast.error('Failed to delete project')
+    } finally {
+      setDeletingProject(null)
+    }
+  }
+
+  const confirmDelete = (projectId: string) => {
+    setShowDeleteConfirm(projectId)
+  }
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(null)
   }
 
   const getStatusIcon = (status: string) => {
@@ -283,6 +320,13 @@ export default function DashboardPage() {
                     >
                       <ExternalLink className="h-4 w-4" />
                     </a>
+                    <button
+                      onClick={() => confirmDelete(project.id)}
+                      className="btn-secondary p-2 hover:bg-red-50 hover:text-red-600 hover:border-red-300"
+                      title="Delete project"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
 
                   {/* Created Date */}
@@ -343,6 +387,42 @@ export default function DashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+              <Trash2 className="h-6 w-6 text-red-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2 text-center">Delete Project</h2>
+            <p className="text-gray-600 mb-6 text-center">
+              Are you sure you want to delete this project? This action cannot be undone and all generated content will be permanently removed.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={cancelDelete}
+                disabled={deletingProject === showDeleteConfirm}
+                className="btn-secondary flex-1"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteProject(showDeleteConfirm)}
+                disabled={deletingProject === showDeleteConfirm}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex-1 flex items-center justify-center"
+              >
+                {deletingProject === showDeleteConfirm ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  'Delete Project'
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

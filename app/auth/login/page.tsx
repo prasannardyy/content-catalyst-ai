@@ -34,11 +34,31 @@ export default function LoginPage() {
     }
 
     try {
-      await signInWithEmailAndPassword(auth, email, password)
+      console.log('Attempting to sign in with email:', email)
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      console.log('Sign in successful:', userCredential.user.email)
       toast.success('Welcome back!')
       router.push('/dashboard')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to sign in')
+      console.error('Login error:', error)
+      let errorMessage = 'Failed to sign in'
+      
+      // Provide user-friendly error messages
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email. Please sign up first.'
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password. Please try again.'
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address format.'
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been disabled.'
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many failed attempts. Please try again later.'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -59,12 +79,27 @@ export default function LoginPage() {
     }
 
     try {
+      console.log('Attempting Google sign in')
       const provider = new GoogleAuthProvider()
-      await signInWithPopup(auth, provider)
+      const result = await signInWithPopup(auth, provider)
+      console.log('Google sign in successful:', result.user.email)
       toast.success('Welcome!')
       router.push('/dashboard')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to sign in with Google')
+      console.error('Google login error:', error)
+      let errorMessage = 'Failed to sign in with Google'
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Sign in cancelled'
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = 'Popup was blocked. Please allow popups for this site.'
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        errorMessage = 'An account already exists with this email using a different sign-in method.'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      toast.error(errorMessage)
     }
   }
 

@@ -516,6 +516,26 @@ const completeProjectWithRealContent = async (projectId: string, youtubeUrl: str
 }
 
 export const projectsApi = {
+  // Delete a project
+  deleteProject: async (projectId: string): Promise<void> => {
+    // For local/demo mode, handle deletion in localStorage
+    if (typeof window !== 'undefined') {
+      const storedProjects = JSON.parse(localStorage.getItem('user_projects') || '[]')
+      const updatedProjects = storedProjects.filter((p: Project) => p.id !== projectId)
+      localStorage.setItem('user_projects', JSON.stringify(updatedProjects))
+    }
+    
+    // TODO: Uncomment when backend is ready
+    /*
+    try {
+      await api.delete(`/projects/${projectId}`)
+    } catch (error) {
+      console.error('Failed to delete project:', error)
+      throw error
+    }
+    */
+  },
+
   // Get all projects for the current user
   getProjects: async (): Promise<Project[]> => {
     // Check if we're in the browser (localStorage is only available client-side)

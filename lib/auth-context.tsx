@@ -54,17 +54,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
                               process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
     
+    console.log('Auth Context - Demo Mode:', isDemoMode, 'Has Config:', hasFirebaseConfig, 'Auth:', !!auth)
+    
     try {
       if (isDemoMode || !hasFirebaseConfig || !auth) {
         // Use demo mode
+        console.log('Using demo mode authentication')
         setSession(demoSession as Session)
         setUser(demoUser as User)
         setLoading(false)
         return
       }
 
+      console.log('Setting up Firebase auth listener')
       // Listen for authentication state changes
       const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+        console.log('Auth state changed:', firebaseUser ? 'User logged in' : 'No user')
         try {
           if (firebaseUser) {
             // Convert Firebase user to our User interface
@@ -88,27 +93,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               user: customUser
             }
 
+            console.log('User authenticated:', customUser.email)
             setUser(customUser)
             setSession(customSession)
           } else {
+            console.log('No user authenticated')
             setUser(null)
             setSession(null)
           }
         } catch (error) {
           console.error('Error processing auth state change:', error)
-          // Fallback to demo mode on error
-          setSession(demoSession as Session)
-          setUser(demoUser as User)
+          setUser(null)
+          setSession(null)
         }
         setLoading(false)
       })
 
-      return () => unsubscribe()
+      return () => {
+        console.log('Cleaning up auth listener')
+        unsubscribe()
+      }
     } catch (error) {
       console.error('Error setting up auth listener:', error)
-      // Fallback to demo mode on any error
-      setSession(demoSession as Session)
-      setUser(demoUser as User)
+      setUser(null)
+      setSession(null)
       setLoading(false)
     }
   }, [])
@@ -118,12 +126,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
                               process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
     
-    if (isDemoMode || !hasFirebaseConfig || !auth) {
-      // In demo mode, just clear the state
+    console.log('Signing out...')
+    
+    try {
+      if (isDemoMode || !hasFirebaseConfig || !auth) {
+        // In demo mode, just clear the state
+        console.log('Demo mode sign out')
+        setSession(null)
+        setUser(null)
+      } else {
+        console.log('Firebase sign out')
+        await firebaseSignOut(auth)
+        setSession(null)
+        setUser(null)
+      }
+    } catch (error) {
+      console.error('Error signing out:', error)
+      // Clear state anyway
       setSession(null)
       setUser(null)
-    } else {
-      await firebaseSignOut(auth)
     }
   }
 

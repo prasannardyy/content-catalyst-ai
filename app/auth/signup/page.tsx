@@ -59,17 +59,36 @@ export default function SignUpPage() {
     }
 
     try {
+      console.log('Creating account for:', formData.email)
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password)
+      console.log('Account created successfully')
       
       // Update the user's display name
       await updateProfile(userCredential.user, {
         displayName: formData.fullName
       })
+      console.log('Profile updated with name:', formData.fullName)
 
       toast.success('Account created successfully!')
       router.push('/dashboard')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create account')
+      console.error('Signup error:', error)
+      let errorMessage = 'Failed to create account'
+      
+      // Provide user-friendly error messages
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'An account with this email already exists. Please sign in instead.'
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address format.'
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please use a stronger password.'
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Email/password accounts are not enabled. Please contact support.'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -90,12 +109,27 @@ export default function SignUpPage() {
     }
 
     try {
+      console.log('Attempting Google sign up')
       const provider = new GoogleAuthProvider()
-      await signInWithPopup(auth, provider)
+      const result = await signInWithPopup(auth, provider)
+      console.log('Google sign up successful:', result.user.email)
       toast.success('Account created successfully!')
       router.push('/dashboard')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to sign up with Google')
+      console.error('Google signup error:', error)
+      let errorMessage = 'Failed to sign up with Google'
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Sign up cancelled'
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = 'Popup was blocked. Please allow popups for this site.'
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        errorMessage = 'An account already exists with this email using a different sign-in method.'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      toast.error(errorMessage)
     }
   }
 

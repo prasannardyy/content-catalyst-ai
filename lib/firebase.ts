@@ -16,16 +16,21 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:123456789:web:abcdef'
 }
 
-// Initialize Firebase only if not already initialized and not in demo mode
+// Initialize Firebase
 let app: FirebaseApp | undefined
 let auth: Auth | null = null
 let db: Firestore | null = null
 
-// Only initialize Firebase on client side and when not in demo mode
+// Only initialize Firebase on client side
 if (typeof window !== 'undefined') {
   try {
-    if (!isDemoMode && hasFirebaseConfig) {
+    // Always try to initialize Firebase if config is available
+    if (hasFirebaseConfig) {
       if (!getApps().length) {
+        console.log('Initializing Firebase with config:', {
+          projectId: firebaseConfig.projectId,
+          authDomain: firebaseConfig.authDomain
+        })
         app = initializeApp(firebaseConfig)
       } else {
         app = getApps()[0]
@@ -33,12 +38,18 @@ if (typeof window !== 'undefined') {
       
       auth = getAuth(app)
       db = getFirestore(app)
+      console.log('Firebase initialized successfully')
+    } else if (isDemoMode) {
+      console.log('Running in demo mode - Firebase not initialized')
+    } else {
+      console.error('Firebase configuration missing')
     }
   } catch (error) {
-    console.warn('Firebase initialization failed, falling back to demo mode:', error)
-    // Fallback to null values if Firebase fails
-    auth = null
-    db = null
+    console.error('Firebase initialization failed:', error)
+    // In production, we should handle this gracefully
+    if (!isDemoMode) {
+      throw error
+    }
   }
 }
 
